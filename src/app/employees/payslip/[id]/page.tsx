@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/button'
 import { formatCurrency, formatDate } from '@/lib/utils'
 import { 
   ArrowLeft, 
-  Printer, 
+  Download, 
   Phone,
   MapPin,
   Calendar,
@@ -112,7 +112,75 @@ export default function ContractualEmployeePayslip() {
   const isNegativeBalance = balance < 0
 
   const handlePrint = () => {
-    window.print()
+    // Create a new window for printing
+    const printWindow = window.open('', '_blank')
+    if (!printWindow) return
+    
+    // Get the report content exactly as displayed
+    const reportContent = document.querySelector('.print-content')
+    if (!reportContent) return
+    
+    // Get all current styles from the page
+    const styles = Array.from(document.styleSheets)
+      .map(styleSheet => {
+        try {
+          return Array.from(styleSheet.cssRules)
+            .map(rule => rule.cssText)
+            .join('\n')
+        } catch (e) {
+          return ''
+        }
+      })
+      .join('\n')
+    
+    // Create the HTML for PDF generation that looks exactly the same
+    const htmlContent = `
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <title>Report - ${employee.firstName} ${employee.lastName}</title>
+          <meta charset="utf-8">
+          <style>
+            ${styles}
+            body { 
+              font-family: system-ui, -apple-system, sans-serif;
+              margin: 0; 
+              padding: 0; 
+              background: white !important; 
+              color: black !important;
+              -webkit-print-color-adjust: exact;
+              print-color-adjust: exact;
+            }
+            * {
+              color: black !important;
+              background: white !important;
+            }
+            .no-print { display: none !important; }
+            .print-content {
+              max-width: none !important;
+              margin: 0 !important;
+              padding: 20px !important;
+              box-shadow: none !important;
+              border-radius: 0 !important;
+            }
+          </style>
+        </head>
+        <body>
+          <div class="print-content">
+            ${reportContent.innerHTML}
+          </div>
+        </body>
+      </html>
+    `
+    
+    printWindow.document.write(htmlContent)
+    printWindow.document.close()
+    
+    // Wait for content to load, then trigger print dialog
+    setTimeout(() => {
+      printWindow.print()
+      printWindow.close()
+    }, 500)
   }
 
   const periodText = startDate && endDate 
@@ -134,18 +202,18 @@ export default function ContractualEmployeePayslip() {
                 <ArrowLeft className="h-4 w-4 mr-2" />
                 Back to Report
               </Button>
-              <h1 className="text-xl font-semibold">Payslip - {employee.firstName} {employee.lastName}</h1>
+              <h1 className="text-xl font-semibold">{employee.firstName} {employee.lastName} - Report</h1>
             </div>
             <Button onClick={handlePrint} className="flex items-center gap-2">
-              <Printer className="h-4 w-4" />
-              Print Payslip
+              <Download className="h-4 w-4" />
+              Download Report
             </Button>
           </div>
         </div>
 
-        {/* Print-Optimized Payslip */}
+        {/* Print-Optimized Report */}
         <div className="max-w-4xl mx-auto p-6 print:p-0 print:max-w-none">
-          <div className="bg-white dark:bg-white dark:text-black shadow-lg print:shadow-none print:bg-white rounded-lg print:rounded-none">
+          <div className="print-content bg-white dark:bg-white dark:text-black shadow-lg print:shadow-none print:bg-white rounded-lg print:rounded-none">
             
             {/* Header with Company Branding */}
             <div className="border-b-2 border-gray-800 p-8 print:p-6">
@@ -157,7 +225,7 @@ export default function ContractualEmployeePayslip() {
                   <p className="text-gray-600 text-sm">Phone: (555) 123-4567</p>
                 </div>
                 <div className="text-right">
-                  <h2 className="text-2xl font-bold text-gray-800 mb-2">PAYSLIP</h2>
+                  <h2 className="text-2xl font-bold text-gray-800 mb-2">Report</h2>
                   <p className="text-gray-600 text-sm">
                     <strong>Period:</strong> {periodText}
                   </p>
@@ -208,6 +276,29 @@ export default function ContractualEmployeePayslip() {
                     <span className="text-gray-600 min-w-20">Status:</span>
                     <span className="text-green-600 capitalize font-medium">{employee.status}</span>
                   </div>
+                </div>
+              </div>
+            </div>
+
+            {/* KPI Summary Cards */}
+            <div className="p-8 print:p-6 border-b">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6 text-center">
+                <div className="bg-gray-50 rounded-lg p-4 print:bg-gray-100 print:border">
+                  <p className="text-gray-600 text-sm font-medium">Total Earned</p>
+                  <p className="text-2xl font-bold text-gray-800">{formatCurrency(totalEarned)}</p>
+                </div>
+                <div className="bg-gray-50 rounded-lg p-4 print:bg-gray-100 print:border">
+                  <p className="text-gray-600 text-sm font-medium">Total Paid</p>
+                  <p className="text-2xl font-bold text-gray-800">{formatCurrency(totalPaid)}</p>
+                </div>
+                <div className="bg-gray-50 rounded-lg p-4 print:bg-gray-100 print:border">
+                  <p className="text-gray-600 text-sm font-medium">Net Balance</p>
+                  <p className={`text-2xl font-bold ${isNegativeBalance ? 'text-red-600' : 'text-green-600'}`}>
+                    {formatCurrency(Math.abs(balance))}
+                  </p>
+                  <p className="text-xs text-gray-500 mt-1">
+                    {isNegativeBalance ? 'Advance Still Owed' : 'Outstanding'}
+                  </p>
                 </div>
               </div>
             </div>
@@ -294,36 +385,10 @@ export default function ContractualEmployeePayslip() {
               </div>
             </div>
 
-            {/* Final Summary */}
-            <div className="p-8 print:p-6">
-              <div className="bg-gray-50 rounded-lg p-6 print:bg-gray-100">
-                <h3 className="text-lg font-semibold text-gray-800 mb-4 text-center">Payment Summary</h3>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6 text-center">
-                  <div className="bg-white rounded-lg p-4 shadow-sm print:shadow-none print:border">
-                    <p className="text-gray-600 text-sm font-medium">Total Earned</p>
-                    <p className="text-2xl font-bold text-gray-800">{formatCurrency(totalEarned)}</p>
-                  </div>
-                  <div className="bg-white rounded-lg p-4 shadow-sm print:shadow-none print:border">
-                    <p className="text-gray-600 text-sm font-medium">Total Paid</p>
-                    <p className="text-2xl font-bold text-gray-800">{formatCurrency(totalPaid)}</p>
-                  </div>
-                  <div className="bg-white rounded-lg p-4 shadow-sm print:shadow-none print:border">
-                    <p className="text-gray-600 text-sm font-medium">Balance</p>
-                    <p className={`text-2xl font-bold ${isNegativeBalance ? 'text-red-600' : 'text-green-600'}`}>
-                      {formatCurrency(Math.abs(balance))}
-                    </p>
-                    <p className="text-xs text-gray-500 mt-1">
-                      {isNegativeBalance ? 'Overpaid' : 'Outstanding'}
-                    </p>
-                  </div>
-                </div>
-              </div>
-            </div>
-
             {/* Footer */}
             <div className="border-t border-gray-300 p-6 print:p-4 text-center">
               <p className="text-gray-500 text-xs">
-                This payslip is computer generated and does not require a signature.
+                This is an official report generated by WINSIDE Construction Ltd. If you have received advance payments, they are adjusted against your total earnings.
               </p>
               <p className="text-gray-500 text-xs mt-1">
                 Generated on {formatDate(new Date())} at {new Date().toLocaleTimeString()}

@@ -15,7 +15,6 @@ import {
   ArrowLeft, 
   Plus, 
   Trash2, 
-  Printer, 
   Edit,
   Phone,
   User,
@@ -222,10 +221,6 @@ export default function ContractualEmployeeReport() {
     setDeleteDialog({ isOpen: false, type: 'work', id: '' })
   }
 
-  const handlePrint = () => {
-    window.print()
-  }
-
   const handleViewPayslip = () => {
     const params = new URLSearchParams()
     if (dateRange.startDate) params.set('start_date', dateRange.startDate)
@@ -259,10 +254,6 @@ export default function ContractualEmployeeReport() {
             <Button onClick={handleViewPayslip} variant="outline" className="flex items-center gap-2">
               <Receipt className="h-4 w-4" />
               Generate Report
-            </Button>
-            <Button onClick={handlePrint} className="flex items-center gap-2">
-              <Printer className="h-4 w-4" />
-              Print Report
             </Button>
           </div>
         </div>

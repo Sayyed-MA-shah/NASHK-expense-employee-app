@@ -1,0 +1,398 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+ 
+@layer base {
+  :root {
+    --background: 0 0% 100%;
+    --foreground: 222.2 84% 4.9%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 222.2 84% 4.9%;
+ 
+    --popover: 0 0% 100%;
+    --popover-foreground: 222.2 84% 4.9%;
+ 
+    --primary: 222.2 47.4% 11.2%;
+    --primary-foreground: 210 40% 98%;
+ 
+    --secondary: 210 40% 96%;
+    --secondary-foreground: 222.2 84% 4.9%;
+ 
+    --muted: 210 40% 96%;
+    --muted-foreground: 215.4 16.3% 46.9%;
+ 
+    --accent: 210 40% 96%;
+    --accent-foreground: 222.2 84% 4.9%;
+ 
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 210 40% 98%;
+
+    --border: 214.3 31.8% 91.4%;
+    --input: 214.3 31.8% 91.4%;
+    --ring: 222.2 84% 4.9%;
+ 
+    --radius: 0.5rem;
+  }
+ 
+  .dark {
+    --background: 222.2 84% 4.9%;
+    --foreground: 210 40% 98%;
+ 
+    --card: 222.2 84% 4.9%;
+    --card-foreground: 210 40% 98%;
+ 
+    --popover: 222.2 84% 4.9%;
+    --popover-foreground: 210 40% 98%;
+ 
+    --primary: 210 40% 98%;
+    --primary-foreground: 222.2 47.4% 11.2%;
+ 
+    --secondary: 217.2 32.6% 17.5%;
+    --secondary-foreground: 210 40% 98%;
+ 
+    --muted: 217.2 32.6% 17.5%;
+    --muted-foreground: 215 20.2% 65.1%;
+ 
+    --accent: 217.2 32.6% 17.5%;
+    --accent-foreground: 210 40% 98%;
+ 
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 210 40% 98%;
+ 
+    --border: 217.2 32.6% 17.5%;
+    --input: 217.2 32.6% 17.5%;
+    --ring: 212.7 26.8% 83.9%;
+  }
+}
+ 
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+}
+
+/* Professional Print Styles for A4 Reports */
+@media print {
+  @page {
+    size: A4;
+    margin: 15mm;
+  }
+  
+  /* Hide non-essential elements */
+  .no-print {
+    display: none !important;
+  }
+  
+  /* Show only print content */
+  .print-only {
+    display: block !important;
+  }
+  
+  /* Base print styles */
+  body {
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+    font-size: 12px;
+    line-height: 1.4;
+    color: #000;
+    background: white;
+  }
+  
+  /* Employee Report Header */
+  .print-header {
+    border-bottom: 2px solid #000;
+    padding-bottom: 12px;
+    margin-bottom: 16px;
+  }
+  
+  .print-header h1 {
+    font-size: 18px;
+    font-weight: bold;
+    margin: 0 0 8px 0;
+    text-align: center;
+  }
+  
+  .print-employee-info {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    margin-bottom: 16px;
+  }
+  
+  .print-employee-info .info-group {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+  
+  .print-employee-info .info-label {
+    font-weight: bold;
+    font-size: 11px;
+    color: #666;
+  }
+  
+  .print-employee-info .info-value {
+    font-size: 12px;
+    font-weight: 500;
+  }
+  
+  /* KPI Cards in one line */
+  .print-kpi-container {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+    gap: 8px;
+    margin: 16px 0;
+    padding: 12px;
+    border: 1px solid #ddd;
+    background: #f9f9f9;
+  }
+  
+  .print-kpi-card {
+    text-align: center;
+    padding: 8px;
+    border: 1px solid #e0e0e0;
+    background: white;
+  }
+  
+  .print-kpi-card .kpi-label {
+    font-size: 10px;
+    color: #666;
+    margin-bottom: 4px;
+    font-weight: 500;
+  }
+  
+  .print-kpi-card .kpi-value {
+    font-size: 13px;
+    font-weight: bold;
+    color: #000;
+  }
+  
+  .print-kpi-card.negative .kpi-value {
+    color: #d32f2f;
+  }
+  
+  .print-kpi-card.positive .kpi-value {
+    color: #2e7d32;
+  }
+  
+  /* Tables */
+  .print-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 12px 0;
+    font-size: 11px;
+  }
+  
+  .print-table th,
+  .print-table td {
+    border: 1px solid #ddd;
+    padding: 6px 8px;
+    text-align: left;
+  }
+  
+  .print-table th {
+    background: #f5f5f5;
+    font-weight: bold;
+    font-size: 10px;
+  }
+  
+  .print-table tbody tr:nth-child(even) {
+    background: #fafafa;
+  }
+  
+  /* Section headers */
+  .print-section-header {
+    font-size: 14px;
+    font-weight: bold;
+    margin: 16px 0 8px 0;
+    padding-bottom: 4px;
+    border-bottom: 1px solid #ccc;
+  }
+  
+  /* Date range info */
+  .print-date-range {
+    font-size: 11px;
+    color: #666;
+    margin-bottom: 12px;
+    text-align: center;
+    font-style: italic;
+  }
+  
+  /* Totals and summaries */
+  .print-totals {
+    margin-top: 12px;
+    padding: 8px;
+    border: 1px solid #ddd;
+    background: #f9f9f9;
+  }
+  
+  .print-totals .total-row {
+    display: flex;
+    justify-content: space-between;
+    margin: 4px 0;
+    font-weight: 500;
+  }
+  
+  .print-totals .total-row.grand-total {
+    font-weight: bold;
+    font-size: 13px;
+    border-top: 1px solid #000;
+    padding-top: 4px;
+    margin-top: 8px;
+  }
+  
+  /* Page breaks */
+  .print-page-break {
+    page-break-before: always;
+  }
+  
+  .print-avoid-break {
+    page-break-inside: avoid;
+  }
+  
+  /* Company header */
+  .print-company-header {
+    text-align: center;
+    margin-bottom: 20px;
+  }
+  
+  .print-company-header .company-name {
+    font-size: 16px;
+    font-weight: bold;
+    margin-bottom: 4px;
+  }
+  
+  .print-company-header .report-title {
+    font-size: 14px;
+    color: #666;
+  }
+
+  /* Enhanced Print Styles for WINSIDE Payslips and Reports */
+  @page {
+    margin: 0.5in;
+    size: A4;
+  }
+
+  /* Force print colors */
+  * {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  /* Hide screen-only elements during print */
+  .no-print {
+    display: none !important;
+  }
+
+  /* Show print-only elements */
+  .print-only {
+    display: block !important;
+  }
+
+  /* Ensure clean page breaks */
+  .print-avoid-break {
+    page-break-inside: avoid;
+  }
+
+  .print-break-before {
+    page-break-before: always;
+  }
+
+  .print-break-after {
+    page-break-after: always;
+  }
+
+  /* Print table styling */
+  table {
+    border-collapse: collapse !important;
+    width: 100% !important;
+  }
+
+  table th,
+  table td {
+    border: 1px solid #ddd !important;
+    padding: 8px !important;
+    text-align: left !important;
+  }
+
+  table th {
+    background-color: #f5f5f5 !important;
+    font-weight: bold !important;
+  }
+
+  /* Print typography */
+  h1 { font-size: 24px !important; }
+  h2 { font-size: 20px !important; }
+  h3 { font-size: 16px !important; }
+  
+  body {
+    font-size: 12px !important;
+    line-height: 1.4 !important;
+    color: #000 !important;
+    background: white !important;
+  }
+
+  /* Remove shadows and borders for print */
+  .print\\:shadow-none {
+    box-shadow: none !important;
+  }
+
+  .print\\:border {
+    border: 1px solid #ddd !important;
+  }
+
+  .print\\:bg-white {
+    background-color: white !important;
+  }
+
+  .print\\:bg-gray-100 {
+    background-color: #f5f5f5 !important;
+  }
+
+  .print\\:rounded-none {
+    border-radius: 0 !important;
+  }
+
+  .print\\:p-0 {
+    padding: 0 !important;
+  }
+
+  .print\\:p-4 {
+    padding: 16px !important;
+  }
+
+  .print\\:p-6 {
+    padding: 24px !important;
+  }
+
+  .print\\:max-w-none {
+    max-width: none !important;
+  }
+
+  /* Print-specific hidden elements */
+  .print\\:hidden {
+    display: none !important;
+  }
+
+  /* Ensure proper spacing in print */
+  .print-spacing > * + * {
+    margin-top: 20px !important;
+  }
+
+  /* Print footer styling */
+  .print-footer {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    text-align: center;
+    font-size: 10px;
+    color: #666;
+    border-top: 1px solid #ddd;
+    padding-top: 10px;
+  }
+}

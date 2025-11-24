@@ -6,7 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button'
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { ToastContainer, useToast } from '@/components/ui/toast'
-import { getExpenses, createExpense, deleteExpense } from '@/lib/api'
+import { getExpenses, createExpense, deleteExpense, updateExpense } from '@/lib/api'
 import { 
   formatCurrency, 
   formatDate, 
@@ -54,6 +54,14 @@ export default function ExpensesPage() {
   const [loading, setLoading] = useState(true)
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
   const [expenseToDelete, setExpenseToDelete] = useState<string | null>(null)
+  const [editDialogOpen, setEditDialogOpen] = useState(false)
+  const [expenseToEdit, setExpenseToEdit] = useState<any>(null)
+  const [editForm, setEditForm] = useState({
+    date: '',
+    category: 'setup_purchase' as ExpenseCategory,
+    amount: '',
+    description: ''
+  })
   const [validationDialogOpen, setValidationDialogOpen] = useState(false)
   const [validationMessage, setValidationMessage] = useState('')
   const { toasts, toast, removeToast } = useToast()
@@ -103,8 +111,49 @@ export default function ExpensesPage() {
   }
 
   function handleEditExpense(expense: any) {
-    // TODO: Implement edit functionality
-    toast.info('Coming Soon', 'Edit functionality will be available soon')
+    setExpenseToEdit(expense)
+    setEditForm({
+      date: expense.date,
+      category: expense.category,
+      amount: expense.amount.toString(),
+      description: expense.description
+    })
+    setEditDialogOpen(true)
+  }
+
+  async function confirmEditExpense() {
+    if (!expenseToEdit) return
+
+    // Validate form
+    if (!editForm.date || !editForm.category || !editForm.amount || !editForm.description.trim()) {
+      setValidationMessage('Please fill in all required fields')
+      setValidationDialogOpen(true)
+      return
+    }
+
+    const amount = parseFloat(editForm.amount)
+    if (isNaN(amount) || amount <= 0) {
+      setValidationMessage('Please enter a valid amount greater than 0')
+      setValidationDialogOpen(true)
+      return
+    }
+
+    try {
+      await updateExpense(expenseToEdit.id, {
+        date: editForm.date,
+        category: editForm.category,
+        amount: amount,
+        description: editForm.description
+      })
+      toast.success('Expense updated', 'The expense has been updated successfully')
+      await loadExpenses()
+      setEditDialogOpen(false)
+      setExpenseToEdit(null)
+    } catch (error) {
+      console.error('Error updating expense:', error)
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error'
+      toast.error('Failed to update expense', errorMessage)
+    }
   }
 
   // Filter expenses based on active tab and date range
@@ -535,6 +584,82 @@ export default function ExpensesPage() {
           </div>
         )}
       </div>
+
+      {/* Edit Expense Dialog */}
+      <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Edit Expense</DialogTitle>
+            <DialogDescription>
+              Update the expense details below
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Date</label>
+              <input
+                type="date"
+                value={editForm.date}
+                onChange={(e) => setEditForm({ ...editForm, date: e.target.value })}
+                className="w-full px-3 py-2 border border-input rounded-md"
+                required
+              />
+            </div>
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Category</label>
+              <select
+                value={editForm.category}
+                onChange={(e) => setEditForm({ ...editForm, category: e.target.value as ExpenseCategory })}
+                className="w-full px-3 py-2 border border-input rounded-md"
+                required
+              >
+                {categories.map(category => (
+                  <option key={category} value={category}>
+                    {getExpenseCategoryName(category)}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Amount (PKR)</label>
+              <input
+                type="number"
+                step="0.01"
+                min="0"
+                value={editForm.amount}
+                onChange={(e) => setEditForm({ ...editForm, amount: e.target.value })}
+                className="w-full px-3 py-2 border border-input rounded-md"
+                placeholder="0.00"
+                required
+              />
+            </div>
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Description</label>
+              <textarea
+                value={editForm.description}
+                onChange={(e) => setEditForm({ ...editForm, description: e.target.value })}
+                className="w-full px-3 py-2 border border-input rounded-md min-h-[80px]"
+                placeholder="Enter description..."
+                required
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => {
+                setEditDialogOpen(false)
+                setExpenseToEdit(null)
+              }}
+            >
+              Cancel
+            </Button>
+            <Button onClick={confirmEditExpense}>
+              Save Changes
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* Delete Confirmation Dialog */}
       <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>

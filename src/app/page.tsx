@@ -40,7 +40,8 @@ export default function Dashboard() {
       // Calculate total expenses
       const totalExpenses = expenses.reduce((sum, e) => sum + e.amount, 0)
       
-      const balance = totalPayin - totalPayout
+      // Balance = PayIn - PayOut - Expenses
+      const balance = totalPayin - totalPayout - totalExpenses
       
       setStats({
         totalPayin,
@@ -193,7 +194,7 @@ export default function Dashboard() {
                 <div className={`text-2xl font-bold ${stats.balance >= 0 ? 'text-blue-600' : 'text-red-600'}`}>{formatCurrency(stats.balance)}</div>
               )}
               <p className="text-xs text-muted-foreground">
-                PayIn - PayOut
+                PayIn - PayOut - Expenses
               </p>
             </CardContent>
           </Card>

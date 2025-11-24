@@ -146,8 +146,9 @@ export default function PaymentsPage() {
           amount: parseFloat(row.amount),
           type: row.type === 'payin' ? 'credit' : 'debit',
           description: row.description,
-          reference: `PAY-${new Date().getFullYear()}-${String(Date.now()).slice(-6)}`
-        })
+          reference: `PAY-${new Date().getFullYear()}-${String(Date.now()).slice(-6)}`,
+          created_at: new Date(row.date).toISOString()
+        } as any)
       }
 
       alert(`${validRows.length} payment(s) saved successfully!`)
@@ -318,19 +319,10 @@ export default function PaymentsPage() {
               Manage and track your payment transactions
             </p>
           </div>
-          <div className="flex items-center gap-3">
-            <Button 
-              onClick={generatePDFReport}
-              className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700"
-            >
-              <FileDown className="h-4 w-4" />
-              Generate Report
-            </Button>
-            <Button className="flex items-center gap-2" onClick={() => setShowAddPaymentForm(true)}>
-              <Plus className="h-4 w-4" />
-              Add New Payment
-            </Button>
-          </div>
+          <Button className="flex items-center gap-2" onClick={() => setShowAddPaymentForm(true)}>
+            <Plus className="h-4 w-4" />
+            Add New Payment
+          </Button>
         </div>
 
         {/* KPI Cards */}
@@ -410,6 +402,15 @@ export default function PaymentsPage() {
                   Clear
                 </Button>
               )}
+              <Button 
+                onClick={generatePDFReport}
+                variant="default"
+                size="sm"
+                className="flex items-center gap-2"
+              >
+                <FileDown className="h-4 w-4" />
+                Generate Report
+              </Button>
             </div>
           </div>
         </div>

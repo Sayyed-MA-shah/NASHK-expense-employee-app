@@ -625,8 +625,8 @@ export default function ExpensesPage() {
                       <tr className="border-b">
                         <th className="text-left p-2 font-medium">Date</th>
                         <th className="text-left p-2 font-medium">Category</th>
-                        <th className="text-left p-2 font-medium">Amount</th>
                         <th className="text-left p-2 font-medium">Description/Notes</th>
+                        <th className="text-left p-2 font-medium">Amount</th>
                         <th className="text-left p-2 font-medium">Actions</th>
                       </tr>
                     </thead>
@@ -658,6 +658,16 @@ export default function ExpensesPage() {
                           </td>
                           <td className="p-2">
                             <input
+                              type="text"
+                              value={row.description}
+                              onChange={(e) => updateExpenseRow(row.id, 'description', e.target.value)}
+                              className="w-full px-2 py-1 border border-input rounded text-sm"
+                              placeholder="Enter description..."
+                              required
+                            />
+                          </td>
+                          <td className="p-2">
+                            <input
                               type="number"
                               step="0.01"
                               min="0"
@@ -665,16 +675,6 @@ export default function ExpensesPage() {
                               onChange={(e) => updateExpenseRow(row.id, 'amount', e.target.value)}
                               className="w-full px-2 py-1 border border-input rounded text-sm"
                               placeholder="0.00"
-                              required
-                            />
-                          </td>
-                          <td className="p-2">
-                            <input
-                              type="text"
-                              value={row.description}
-                              onChange={(e) => updateExpenseRow(row.id, 'description', e.target.value)}
-                              className="w-full px-2 py-1 border border-input rounded text-sm"
-                              placeholder="Enter description..."
                               required
                             />
                           </td>

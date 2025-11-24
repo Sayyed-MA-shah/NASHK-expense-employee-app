@@ -8,7 +8,7 @@ import { Input } from '@/components/ui/input'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { mockPayments } from '@/lib/mockData'
 import { formatCurrency, formatDate, getStatusColor, generateId } from '@/lib/utils'
-import { TrendingUp, TrendingDown, Wallet, Calendar, Plus, X, Trash2 } from 'lucide-react'
+import { TrendingUp, TrendingDown, Wallet, Calendar, Plus, X, Trash2, Edit, Trash } from 'lucide-react'
 
 interface PaymentRow {
   id: string
@@ -73,6 +73,17 @@ export default function PaymentsPage() {
     setPaymentRows(paymentRows.map(row => 
       row.id === id ? { ...row, [field]: value } : row
     ))
+  }
+
+  const handleDeletePayment = (paymentId: string) => {
+    if (confirm('Are you sure you want to delete this payment?')) {
+      setPayments(prev => prev.filter(p => p.id !== paymentId))
+    }
+  }
+
+  const handleEditPayment = (paymentId: string) => {
+    // TODO: Implement edit functionality
+    alert('Edit functionality will be implemented soon')
   }
 
   const validateAndSubmitPayments = () => {
@@ -248,12 +259,8 @@ export default function PaymentsPage() {
                   <thead>
                     <tr className="border-b">
                       <th className="text-left p-2 font-medium">Reference</th>
-                      <th className="text-left p-2 font-medium">
-                        {activeTab === 'payin' ? 'From' : 'To'}
-                      </th>
+                      <th className="text-left p-2 font-medium">Description</th>
                       <th className="text-left p-2 font-medium">Amount</th>
-                      <th className="text-left p-2 font-medium">Method</th>
-                      <th className="text-left p-2 font-medium">Status</th>
                       <th className="text-left p-2 font-medium">Date</th>
                       <th className="text-left p-2 font-medium">Actions</th>
                     </tr>
@@ -264,31 +271,39 @@ export default function PaymentsPage() {
                         <tr key={payment.id} className="border-b hover:bg-muted/50">
                           <td className="p-2 font-mono text-sm">{payment.reference}</td>
                           <td className="p-2">
-                            <div>
-                              <p className="font-medium">{payment.customerName}</p>
-                              <p className="text-sm text-muted-foreground">{payment.customerEmail}</p>
-                            </div>
+                            <p className="font-medium">{payment.description}</p>
                           </td>
                           <td className="p-2 font-medium">
                             <span className={activeTab === 'payin' ? 'text-green-600' : 'text-red-600'}>
                               {activeTab === 'payin' ? '+' : '-'}{formatCurrency(payment.amount)}
                             </span>
                           </td>
-                          <td className="p-2 capitalize">{payment.method.replace('_', ' ')}</td>
-                          <td className="p-2">
-                            <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(payment.status)}`}>
-                              {payment.status}
-                            </span>
-                          </td>
                           <td className="p-2 text-sm">{formatDate(payment.createdAt, 'short')}</td>
                           <td className="p-2">
-                            <Button variant="ghost" size="sm">View</Button>
+                            <div className="flex items-center gap-2">
+                              <Button 
+                                variant="ghost" 
+                                size="sm"
+                                onClick={() => handleEditPayment(payment.id)}
+                                className="hover:bg-blue-50 hover:text-blue-600"
+                              >
+                                <Edit className="h-4 w-4" />
+                              </Button>
+                              <Button 
+                                variant="ghost" 
+                                size="sm"
+                                onClick={() => handleDeletePayment(payment.id)}
+                                className="hover:bg-red-50 hover:text-red-600"
+                              >
+                                <Trash className="h-4 w-4" />
+                              </Button>
+                            </div>
                           </td>
                         </tr>
                       ))
                     ) : (
                       <tr>
-                        <td colSpan={7} className="p-8 text-center text-muted-foreground">
+                        <td colSpan={5} className="p-8 text-center text-muted-foreground">
                           No {activeTab} transactions found
                           {dateFilter && ' for the selected date'}
                         </td>

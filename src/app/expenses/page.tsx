@@ -356,18 +356,31 @@ export default function ExpensesPage() {
     
     // Footer
     const finalY = (doc as any).lastAutoTable.finalY || 102
-    if (finalY < pageHeight - 30) {
+    doc.setFontSize(8)
+    doc.setTextColor(150, 150, 150)
+    doc.setFont('helvetica', 'italic')
+    doc.text(
+      'This is a computer-generated report. For any discrepancies, please contact the finance department.',
+      pageWidth / 2,
+      pageHeight - 15,
+      { align: 'center' }
+    )
+    
+    // Page numbers
+    const pageCount = (doc as any).internal.getNumberOfPages()
+    for (let i = 1; i <= pageCount; i++) {
+      doc.setPage(i)
       doc.setFontSize(8)
-      doc.setTextColor(150, 150, 150)
-      doc.text('This is a system-generated report', pageWidth / 2, pageHeight - 15, { align: 'center' })
-      doc.text(`Page 1`, pageWidth / 2, pageHeight - 10, { align: 'center' })
+      doc.setTextColor(100, 100, 100)
+      doc.text(`Page ${i} of ${pageCount}`, pageWidth - 20, pageHeight - 10)
     }
     
-    // Save PDF
-    const fileName = `NASHK_Expenses_Report_${dateRange.start || 'all'}_to_${dateRange.end || 'now'}.pdf`
-    doc.save(fileName)
+    // Open PDF in new window for preview (user can choose to print or save)
+    const pdfBlob = doc.output('blob')
+    const pdfUrl = URL.createObjectURL(pdfBlob)
+    window.open(pdfUrl, '_blank')
     
-    toast.success('Report Generated', 'Your expenses report has been downloaded successfully')
+    toast.success('Report Generated', 'Your expenses report has been opened in a new tab')
   }
 
   return (

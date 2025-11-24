@@ -7,6 +7,8 @@ import { Button } from '@/components/ui/button'
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { ToastContainer, useToast } from '@/components/ui/toast'
 import { getExpenses, createExpense, deleteExpense, updateExpense } from '@/lib/api'
+import jsPDF from 'jspdf'
+import autoTable from 'jspdf-autotable'
 import { 
   formatCurrency, 
   formatDate, 
@@ -26,7 +28,8 @@ import {
   X,
   Trash2,
   Pencil,
-  AlertTriangle
+  AlertTriangle,
+  FileDown
 } from 'lucide-react'
 
 interface ExpenseRow {
@@ -250,6 +253,123 @@ export default function ExpensesPage() {
     }
   }
 
+  const generatePDFReport = () => {
+    if (!dateRange.start && !dateRange.end) {
+      setValidationMessage('Please select a date range to generate the report.')
+      setValidationDialogOpen(true)
+      return
+    }
+
+    const doc = new jsPDF()
+    const pageWidth = doc.internal.pageSize.width
+    const pageHeight = doc.internal.pageSize.height
+    
+    // Company Header
+    doc.setFillColor(41, 128, 185) // Professional blue
+    doc.rect(0, 0, pageWidth, 35, 'F')
+    
+    doc.setTextColor(255, 255, 255)
+    doc.setFontSize(24)
+    doc.setFont('helvetica', 'bold')
+    doc.text('NASHK', 15, 20)
+    
+    doc.setFontSize(10)
+    doc.setFont('helvetica', 'normal')
+    doc.text('Expense & Employee Management System', 15, 27)
+    
+    // Report Title
+    doc.setTextColor(0, 0, 0)
+    doc.setFontSize(16)
+    doc.setFont('helvetica', 'bold')
+    const reportTitle = activeTab === 'all' ? 'ALL EXPENSES REPORT' : `${getExpenseCategoryName(activeTab).toUpperCase()} EXPENSES REPORT`
+    doc.text(reportTitle, pageWidth / 2, 50, { align: 'center' })
+    
+    // Date Range
+    doc.setFontSize(10)
+    doc.setFont('helvetica', 'normal')
+    doc.setTextColor(100, 100, 100)
+    const dateRangeText = dateRange.start && dateRange.end 
+      ? `Period: ${new Date(dateRange.start).toLocaleDateString()} - ${new Date(dateRange.end).toLocaleDateString()}`
+      : dateRange.start 
+      ? `From: ${new Date(dateRange.start).toLocaleDateString()}`
+      : `Until: ${new Date(dateRange.end).toLocaleDateString()}`
+    doc.text(dateRangeText, pageWidth / 2, 57, { align: 'center' })
+    
+    doc.setTextColor(0, 0, 0)
+    doc.text(`Generated: ${new Date().toLocaleString()}`, pageWidth / 2, 63, { align: 'center' })
+    
+    // Summary Box
+    const totalAmount = filteredExpenses.reduce((sum, e) => sum + e.amount, 0)
+    const expenseCount = filteredExpenses.length
+    
+    doc.setFillColor(240, 240, 240)
+    doc.roundedRect(15, 70, pageWidth - 30, 22, 3, 3, 'F')
+    
+    doc.setFontSize(9)
+    doc.setFont('helvetica', 'bold')
+    doc.setTextColor(0, 0, 0)
+    
+    const summaryY = 80
+    doc.text('Total Expenses:', 25, summaryY)
+    doc.setTextColor(220, 0, 0)
+    doc.text(formatCurrency(totalAmount), 80, summaryY)
+    
+    doc.setTextColor(0, 0, 0)
+    doc.text('Number of Transactions:', 25, summaryY + 8)
+    doc.text(expenseCount.toString(), 80, summaryY + 8)
+    
+    // Expenses Table
+    const tableData = filteredExpenses.map(expense => [
+      formatDate(expense.date, 'short'),
+      getExpenseCategoryName(expense.category),
+      expense.description.length > 40 ? expense.description.substring(0, 40) + '...' : expense.description,
+      formatCurrency(expense.amount)
+    ])
+    
+    autoTable(doc, {
+      startY: 102,
+      head: [['Date', 'Category', 'Description', 'Amount']],
+      body: tableData,
+      theme: 'striped',
+      headStyles: {
+        fillColor: [41, 128, 185],
+        textColor: 255,
+        fontSize: 9,
+        fontStyle: 'bold',
+        halign: 'left'
+      },
+      styles: {
+        fontSize: 8,
+        cellPadding: 3
+      },
+      columnStyles: {
+        0: { cellWidth: 25 },
+        1: { cellWidth: 35 },
+        2: { cellWidth: 85 },
+        3: { cellWidth: 30, halign: 'right' }
+      },
+      alternateRowStyles: {
+        fillColor: [245, 245, 245]
+      },
+      margin: { left: 15, right: 15 }
+    })
+    
+    // Footer
+    const finalY = (doc as any).lastAutoTable.finalY || 102
+    if (finalY < pageHeight - 30) {
+      doc.setFontSize(8)
+      doc.setTextColor(150, 150, 150)
+      doc.text('This is a system-generated report', pageWidth / 2, pageHeight - 15, { align: 'center' })
+      doc.text(`Page 1`, pageWidth / 2, pageHeight - 10, { align: 'center' })
+    }
+    
+    // Save PDF
+    const fileName = `NASHK_Expenses_Report_${dateRange.start || 'all'}_to_${dateRange.end || 'now'}.pdf`
+    doc.save(fileName)
+    
+    toast.success('Report Generated', 'Your expenses report has been downloaded successfully')
+  }
+
   return (
     <DashboardLayout>
       <div className="space-y-6">
@@ -260,16 +380,10 @@ export default function ExpensesPage() {
               Track and manage your business expenses
             </p>
           </div>
-          <div className="flex gap-2">
-            <Button variant="outline">
-              <FileText className="h-4 w-4 mr-2" />
-              Generate Report
-            </Button>
-            <Button onClick={() => setShowAddForm(true)}>
-              <Plus className="h-4 w-4 mr-2" />
-              Add Expenses
-            </Button>
-          </div>
+          <Button onClick={() => setShowAddForm(true)}>
+            <Plus className="h-4 w-4 mr-2" />
+            Add Expenses
+          </Button>
         </div>
 
         {/* KPI Cards */}
@@ -339,9 +453,18 @@ export default function ExpensesPage() {
               size="sm" 
               onClick={() => setDateRange({ start: '', end: '' })}
             >
-              Clear Dates
+              Clear
             </Button>
           )}
+          <Button 
+            onClick={generatePDFReport}
+            variant="default"
+            size="sm"
+            className="flex items-center gap-2"
+          >
+            <FileDown className="h-4 w-4" />
+            Generate Report
+          </Button>
         </div>
 
         {/* Category Tabs */}

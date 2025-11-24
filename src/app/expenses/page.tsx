@@ -60,10 +60,12 @@ export default function ExpensesPage() {
     try {
       setLoading(true)
       const data = await getExpenses()
-      setExpenses(data)
+      setExpenses(data || [])
     } catch (error) {
       console.error('Error loading expenses:', error)
-      alert('Failed to load expenses. Please try again.')
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error'
+      alert(`Failed to load expenses: ${errorMessage}`)
+      setExpenses([])
     } finally {
       setLoading(false)
     }
@@ -72,7 +74,8 @@ export default function ExpensesPage() {
   // Filter expenses based on active tab and date range
   const filteredExpenses = expenses.filter(expense => {
     const matchesCategory = activeTab === 'all' || expense.category === activeTab
-    const expenseDate = expense.date.toISOString().split('T')[0]
+    // expense.date is already a string from Supabase (YYYY-MM-DD format)
+    const expenseDate = typeof expense.date === 'string' ? expense.date : new Date(expense.date).toISOString().split('T')[0]
     const matchesDateRange = (!dateRange.start || expenseDate >= dateRange.start) && 
                             (!dateRange.end || expenseDate <= dateRange.end)
     return matchesCategory && matchesDateRange
@@ -125,16 +128,19 @@ export default function ExpensesPage() {
     try {
       // Create expenses in Supabase
       for (const row of validRows) {
-        await createExpense({
+        const expenseData = {
           amount: parseFloat(row.amount),
           currency: 'PKR',
           category: row.category,
           status: 'approved',
           description: row.description,
-          date: row.date,
+          date: row.date, // YYYY-MM-DD format from HTML5 date input
           employee_id: 'emp_manual',
           employee_name: 'Manual Entry',
-        } as any)
+        }
+        
+        console.log('Creating expense:', expenseData)
+        await createExpense(expenseData as any)
       }
 
       alert(`${validRows.length} expense(s) submitted successfully!`)
@@ -153,7 +159,8 @@ export default function ExpensesPage() {
       setShowAddForm(false)
     } catch (error) {
       console.error('Error saving expenses:', error)
-      alert('Failed to save expenses. Please try again.')
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred'
+      alert(`Failed to save expenses: ${errorMessage}`)
     }
   }
 

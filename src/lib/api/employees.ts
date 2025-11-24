@@ -56,7 +56,7 @@ export async function getEmployeesByType(type: 'contractual' | 'fixed') {
 export async function createEmployee(employee: EmployeeInsert) {
   const { data, error } = await supabase
     .from('employees')
-    .insert(employee)
+    .insert(employee as any)
     .select()
     .single()
   
@@ -67,7 +67,7 @@ export async function createEmployee(employee: EmployeeInsert) {
 export async function updateEmployee(id: string, employee: EmployeeUpdate) {
   const { data, error } = await supabase
     .from('employees')
-    .update(employee)
+    .update(employee as any)
     .eq('id', id)
     .select()
     .single()
@@ -104,7 +104,7 @@ export async function getWorkRecordsByEmployee(employeeId: string) {
 export async function createWorkRecord(workRecord: WorkRecordInsert) {
   const { data, error } = await supabase
     .from('work_records')
-    .insert(workRecord)
+    .insert(workRecord as any)
     .select()
     .single()
   
@@ -140,7 +140,7 @@ export async function getSalaryPaymentsByEmployee(employeeId: string) {
 export async function createSalaryPayment(payment: SalaryPaymentInsert) {
   const { data, error } = await supabase
     .from('salary_payments')
-    .insert(payment)
+    .insert(payment as any)
     .select()
     .single()
   
@@ -166,7 +166,7 @@ export async function getAdvancesByEmployee(employeeId: string) {
 export async function createAdvance(advance: AdvanceInsert) {
   const { data, error } = await supabase
     .from('advances')
-    .insert(advance)
+    .insert(advance as any)
     .select()
     .single()
   
@@ -192,7 +192,7 @@ export async function getOvertimeRecordsByEmployee(employeeId: string) {
 export async function createOvertimeRecord(overtime: OvertimeRecordInsert) {
   const { data, error } = await supabase
     .from('overtime_records')
-    .insert(overtime)
+    .insert(overtime as any)
     .select()
     .single()
   

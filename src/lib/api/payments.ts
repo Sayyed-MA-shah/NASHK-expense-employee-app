@@ -44,7 +44,7 @@ export async function getPaymentsByType(type: 'credit' | 'debit') {
 export async function createPayment(payment: PaymentInsert) {
   const { data, error } = await supabase
     .from('payments')
-    .insert(payment)
+    .insert(payment as any)
     .select()
     .single()
   
@@ -56,7 +56,7 @@ export async function createPayment(payment: PaymentInsert) {
 export async function updatePayment(id: string, payment: PaymentUpdate) {
   const { data, error } = await supabase
     .from('payments')
-    .update(payment)
+    .update(payment as any)
     .eq('id', id)
     .select()
     .single()

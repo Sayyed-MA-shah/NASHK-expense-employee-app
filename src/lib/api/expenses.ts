@@ -56,7 +56,7 @@ export async function getExpensesByCategory(category: string) {
 export async function createExpense(expense: ExpenseInsert) {
   const { data, error } = await supabase
     .from('expenses')
-    .insert(expense)
+    .insert(expense as any)
     .select()
     .single()
   
@@ -68,7 +68,7 @@ export async function createExpense(expense: ExpenseInsert) {
 export async function updateExpense(id: string, expense: ExpenseUpdate) {
   const { data, error } = await supabase
     .from('expenses')
-    .update(expense)
+    .update(expense as any)
     .eq('id', id)
     .select()
     .single()
@@ -96,7 +96,7 @@ export async function approveExpense(id: string, approvedBy: string) {
       status: 'approved',
       approved_by: approvedBy,
       approved_at: new Date().toISOString()
-    })
+    } as any)
     .eq('id', id)
     .select()
     .single()
@@ -112,7 +112,7 @@ export async function rejectExpense(id: string, reason: string) {
     .update({
       status: 'rejected',
       rejection_reason: reason
-    })
+    } as any)
     .eq('id', id)
     .select()
     .single()

@@ -6,9 +6,10 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { getPayments, createPayment, deletePayment } from '@/lib/api'
 import { formatCurrency, formatDate, generateId } from '@/lib/utils'
-import { TrendingUp, TrendingDown, Wallet, Calendar, Plus, X, Trash2, Edit, Trash, FileDown } from 'lucide-react'
+import { TrendingUp, TrendingDown, Wallet, Calendar, Plus, X, Trash2, Trash, FileDown } from 'lucide-react'
 import jsPDF from 'jspdf'
 import autoTable from 'jspdf-autotable'
 
@@ -36,6 +37,10 @@ export default function PaymentsPage() {
   ])
   const [payments, setPayments] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
+  const [deleteDialog, setDeleteDialog] = useState<{ open: boolean; paymentId: string | null }>({ open: false, paymentId: null })
+  const [alertDialog, setAlertDialog] = useState<{ open: boolean; title: string; message: string }>({ open: false, title: '', message: '' })
+  const [editDialog, setEditDialog] = useState<{ open: boolean; payment: any | null }>({ open: false, payment: null })
+  const [editForm, setEditForm] = useState({ date: '', description: '', amount: '' })
 
   // Fetch payments from Supabase
   useEffect(() => {
@@ -49,7 +54,7 @@ export default function PaymentsPage() {
       setPayments(data)
     } catch (error) {
       console.error('Error loading payments:', error)
-      alert('Failed to load payments')
+      setAlertDialog({ open: true, title: 'Error', message: 'Failed to load payments. Please try again.' })
     } finally {
       setLoading(false)
     }
@@ -112,21 +117,54 @@ export default function PaymentsPage() {
     ))
   }
 
-  const handleDeletePayment = async (paymentId: string) => {
-    if (!confirm('Are you sure you want to delete this payment?')) return
+  const handleDeletePayment = (paymentId: string) => {
+    setDeleteDialog({ open: true, paymentId })
+  }
+
+  const confirmDelete = async () => {
+    if (!deleteDialog.paymentId) return
     
     try {
-      await deletePayment(paymentId)
-      setPayments(prev => prev.filter(p => p.id !== paymentId))
+      await deletePayment(deleteDialog.paymentId)
+      setPayments(prev => prev.filter(p => p.id !== deleteDialog.paymentId))
+      setDeleteDialog({ open: false, paymentId: null })
     } catch (error) {
       console.error('Error deleting payment:', error)
-      alert('Failed to delete payment')
+      setDeleteDialog({ open: false, paymentId: null })
+      setAlertDialog({ open: true, title: 'Error', message: 'Failed to delete payment. Please try again.' })
     }
   }
 
-  const handleEditPayment = (paymentId: string) => {
-    // TODO: Implement edit functionality
-    alert('Edit functionality will be implemented soon')
+  const handleEditPayment = (payment: any) => {
+    setEditDialog({ open: true, payment })
+    setEditForm({
+      date: new Date(payment.created_at).toISOString().split('T')[0],
+      description: payment.description,
+      amount: payment.amount.toString()
+    })
+  }
+
+  const confirmEdit = async () => {
+    if (!editDialog.payment || !editForm.date || !editForm.description || !editForm.amount) {
+      setAlertDialog({ open: true, title: 'Validation Error', message: 'Please fill in all fields.' })
+      return
+    }
+
+    try {
+      const { updatePayment } = await import('@/lib/api')
+      await updatePayment(editDialog.payment.id, {
+        description: editForm.description,
+        amount: parseFloat(editForm.amount),
+        created_at: new Date(editForm.date).toISOString()
+      } as any)
+      
+      await loadPayments()
+      setEditDialog({ open: false, payment: null })
+      setAlertDialog({ open: true, title: 'Success', message: 'Payment updated successfully!' })
+    } catch (error) {
+      console.error('Error updating payment:', error)
+      setAlertDialog({ open: true, title: 'Error', message: 'Failed to update payment. Please try again.' })
+    }
   }
 
   const validateAndSubmitPayments = async () => {
@@ -135,7 +173,7 @@ export default function PaymentsPage() {
     )
     
     if (validRows.length === 0) {
-      alert('Please fill in all required fields for at least one payment row.')
+      setAlertDialog({ open: true, title: 'Validation Error', message: 'Please fill in all required fields for at least one payment row.' })
       return
     }
 
@@ -151,7 +189,7 @@ export default function PaymentsPage() {
         } as any)
       }
 
-      alert(`${validRows.length} payment(s) saved successfully!`)
+      setAlertDialog({ open: true, title: 'Success', message: `${validRows.length} payment(s) saved successfully!` })
       
       // Reload payments from database
       await loadPayments()
@@ -167,13 +205,13 @@ export default function PaymentsPage() {
       setShowAddPaymentForm(false)
     } catch (error) {
       console.error('Error saving payments:', error)
-      alert('Failed to save payments. Please try again.')
+      setAlertDialog({ open: true, title: 'Error', message: 'Failed to save payments. Please try again.' })
     }
   }
 
   const generatePDFReport = () => {
     if (!fromDate && !toDate) {
-      alert('Please select a date range to generate the report')
+      setAlertDialog({ open: true, title: 'Date Range Required', message: 'Please select a date range to generate the report.' })
       return
     }
 
@@ -304,9 +342,13 @@ export default function PaymentsPage() {
       doc.text(`Page ${i} of ${pageCount}`, pageWidth - 20, pageHeight - 10)
     }
     
-    // Save PDF
-    const fileName = `${activeTab}_report_${fromDate || 'all'}_to_${toDate || 'all'}_${new Date().getTime()}.pdf`
-    doc.save(fileName)
+    // Open PDF in new window for preview (user can choose to print or save)
+    const pdfBlob = doc.output('blob')
+    const pdfUrl = URL.createObjectURL(pdfBlob)
+    window.open(pdfUrl, '_blank')
+    
+    // Clean up the URL after a delay
+    setTimeout(() => URL.revokeObjectURL(pdfUrl), 100)
   }
 
   return (
@@ -493,16 +535,18 @@ export default function PaymentsPage() {
                               <Button 
                                 variant="ghost" 
                                 size="sm"
-                                onClick={() => handleEditPayment(payment.id)}
+                                onClick={() => handleEditPayment(payment)}
                                 className="hover:bg-blue-50 hover:text-blue-600"
+                                title="Edit"
                               >
-                                <Edit className="h-4 w-4" />
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/><path d="m15 5 4 4"/></svg>
                               </Button>
                               <Button 
                                 variant="ghost" 
                                 size="sm"
                                 onClick={() => handleDeletePayment(payment.id)}
                                 className="hover:bg-red-50 hover:text-red-600"
+                                title="Delete"
                               >
                                 <Trash className="h-4 w-4" />
                               </Button>
@@ -631,6 +675,92 @@ export default function PaymentsPage() {
           </div>
         )}
       </div>
+
+      {/* Delete Confirmation Dialog */}
+      <Dialog open={deleteDialog.open} onOpenChange={(open) => !open && setDeleteDialog({ open: false, paymentId: null })}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Confirm Deletion</DialogTitle>
+            <DialogDescription>
+              Are you sure you want to delete this payment? This action cannot be undone.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setDeleteDialog({ open: false, paymentId: null })}>
+              Cancel
+            </Button>
+            <Button variant="destructive" onClick={confirmDelete}>
+              Delete
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit Payment Dialog */}
+      <Dialog open={editDialog.open} onOpenChange={(open) => !open && setEditDialog({ open: false, payment: null })}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Edit Payment</DialogTitle>
+            <DialogDescription>
+              Update the payment information below.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Date</label>
+              <input
+                type="date"
+                value={editForm.date}
+                onChange={(e) => setEditForm({ ...editForm, date: e.target.value })}
+                className="w-full px-3 py-2 border border-input rounded-md"
+              />
+            </div>
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Description</label>
+              <Input
+                value={editForm.description}
+                onChange={(e) => setEditForm({ ...editForm, description: e.target.value })}
+                placeholder="Enter description"
+              />
+            </div>
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Amount</label>
+              <Input
+                type="number"
+                step="0.01"
+                value={editForm.amount}
+                onChange={(e) => setEditForm({ ...editForm, amount: e.target.value })}
+                placeholder="Enter amount"
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setEditDialog({ open: false, payment: null })}>
+              Cancel
+            </Button>
+            <Button onClick={confirmEdit}>
+              Save Changes
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Alert Dialog */}
+      <Dialog open={alertDialog.open} onOpenChange={(open) => !open && setAlertDialog({ open: false, title: '', message: '' })}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>{alertDialog.title}</DialogTitle>
+            <DialogDescription>
+              {alertDialog.message}
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button onClick={() => setAlertDialog({ open: false, title: '', message: '' })}>
+              OK
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </DashboardLayout>
   )
 }

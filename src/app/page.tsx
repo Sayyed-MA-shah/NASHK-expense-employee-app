@@ -1,14 +1,52 @@
+'use client'
+
+import { useState, useEffect } from 'react'
 import DashboardLayout from '@/components/layout/dashboard-layout'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { formatCurrency, formatNumber } from '@/lib/utils'
+import { getPayments } from '@/lib/api'
 
 export default function Dashboard() {
-  // Mock data for the dashboard
-  const stats = {
-    totalPayin: 45231.89,
-    totalPayout: 28456.32,
-    totalExpenses: 12426.78,
-    balance: 16775.57, // totalPayin - totalPayout
+  const [stats, setStats] = useState({
+    totalPayin: 0,
+    totalPayout: 0,
+    totalExpenses: 12426.78, // TODO: Connect to expenses API
+    balance: 0,
+  })
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    loadDashboardStats()
+  }, [])
+
+  async function loadDashboardStats() {
+    try {
+      setLoading(true)
+      // Fetch all payments
+      const payments = await getPayments()
+      
+      // Calculate PayIn (credit) and PayOut (debit)
+      const totalPayin = payments
+        .filter(p => p.type === 'credit')
+        .reduce((sum, p) => sum + p.amount, 0)
+      
+      const totalPayout = payments
+        .filter(p => p.type === 'debit')
+        .reduce((sum, p) => sum + p.amount, 0)
+      
+      const balance = totalPayin - totalPayout
+      
+      setStats({
+        totalPayin,
+        totalPayout,
+        totalExpenses: 12426.78, // TODO: Connect to expenses API
+        balance,
+      })
+    } catch (error) {
+      console.error('Error loading dashboard stats:', error)
+    } finally {
+      setLoading(false)
+    }
   }
 
   const recentTransactions = [
@@ -49,9 +87,13 @@ export default function Dashboard() {
               </svg>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-green-600">{formatCurrency(stats.totalPayin)}</div>
+              {loading ? (
+                <div className="text-2xl font-bold text-muted-foreground">Loading...</div>
+              ) : (
+                <div className="text-2xl font-bold text-green-600">{formatCurrency(stats.totalPayin)}</div>
+              )}
               <p className="text-xs text-muted-foreground">
-                +20.1% from last month
+                Total incoming payments
               </p>
             </CardContent>
           </Card>
@@ -76,9 +118,13 @@ export default function Dashboard() {
               </svg>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-red-600">{formatCurrency(stats.totalPayout)}</div>
+              {loading ? (
+                <div className="text-2xl font-bold text-muted-foreground">Loading...</div>
+              ) : (
+                <div className="text-2xl font-bold text-red-600">{formatCurrency(stats.totalPayout)}</div>
+              )}
               <p className="text-xs text-muted-foreground">
-                +12.5% from last month
+                Total outgoing payments
               </p>
             </CardContent>
           </Card>
@@ -131,7 +177,11 @@ export default function Dashboard() {
               </svg>
             </CardHeader>
             <CardContent>
-              <div className={`text-2xl font-bold ${stats.balance >= 0 ? 'text-blue-600' : 'text-red-600'}`}>{formatCurrency(stats.balance)}</div>
+              {loading ? (
+                <div className="text-2xl font-bold text-muted-foreground">Loading...</div>
+              ) : (
+                <div className={`text-2xl font-bold ${stats.balance >= 0 ? 'text-blue-600' : 'text-red-600'}`}>{formatCurrency(stats.balance)}</div>
+              )}
               <p className="text-xs text-muted-foreground">
                 PayIn - PayOut
               </p>

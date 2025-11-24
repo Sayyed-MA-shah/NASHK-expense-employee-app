@@ -5,10 +5,10 @@ import { formatCurrency, formatNumber } from '@/lib/utils'
 export default function Dashboard() {
   // Mock data for the dashboard
   const stats = {
-    totalRevenue: 45231.89,
-    totalPayments: 2350,
+    totalPayin: 45231.89,
+    totalPayout: 28456.32,
     totalExpenses: 12426.78,
-    activeEmployees: 23,
+    balance: 16775.57, // totalPayin - totalPayout
   }
 
   const recentTransactions = [
@@ -33,7 +33,7 @@ export default function Dashboard() {
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">
-                Total Revenue
+                Total PayIn
               </CardTitle>
               <svg
                 xmlns="http://www.w3.org/2000/svg"
@@ -43,13 +43,13 @@ export default function Dashboard() {
                 strokeLinecap="round"
                 strokeLinejoin="round"
                 strokeWidth="2"
-                className="h-4 w-4 text-muted-foreground"
+                className="h-4 w-4 text-green-600"
               >
                 <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
               </svg>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{formatCurrency(stats.totalRevenue)}</div>
+              <div className="text-2xl font-bold text-green-600">{formatCurrency(stats.totalPayin)}</div>
               <p className="text-xs text-muted-foreground">
                 +20.1% from last month
               </p>
@@ -59,7 +59,7 @@ export default function Dashboard() {
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">
-                Total Payments
+                Total PayOut
               </CardTitle>
               <svg
                 xmlns="http://www.w3.org/2000/svg"
@@ -69,14 +69,14 @@ export default function Dashboard() {
                 strokeLinecap="round"
                 strokeLinejoin="round"
                 strokeWidth="2"
-                className="h-4 w-4 text-muted-foreground"
+                className="h-4 w-4 text-red-600"
               >
                 <rect width="20" height="14" x="2" y="5" rx="2" />
                 <path d="M2 10h20" />
               </svg>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{formatNumber(stats.totalPayments)}</div>
+              <div className="text-2xl font-bold text-red-600">{formatCurrency(stats.totalPayout)}</div>
               <p className="text-xs text-muted-foreground">
                 +12.5% from last month
               </p>
@@ -114,7 +114,7 @@ export default function Dashboard() {
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">
-                Active Employees
+                Balance
               </CardTitle>
               <svg
                 xmlns="http://www.w3.org/2000/svg"
@@ -124,17 +124,16 @@ export default function Dashboard() {
                 strokeLinecap="round"
                 strokeLinejoin="round"
                 strokeWidth="2"
-                className="h-4 w-4 text-muted-foreground"
+                className="h-4 w-4 text-blue-600"
               >
-                <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
-                <circle cx="9" cy="7" r="4" />
-                <path d="M22 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75" />
+                <path d="M3 3v18h18" />
+                <path d="m19 9-5 5-4-4-3 3" />
               </svg>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{stats.activeEmployees}</div>
+              <div className={`text-2xl font-bold ${stats.balance >= 0 ? 'text-blue-600' : 'text-red-600'}`}>{formatCurrency(stats.balance)}</div>
               <p className="text-xs text-muted-foreground">
-                +2 new hires this month
+                PayIn - PayOut
               </p>
             </CardContent>
           </Card>

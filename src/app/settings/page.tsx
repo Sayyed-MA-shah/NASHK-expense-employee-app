@@ -1,20 +1,45 @@
+'use client'
+
 import DashboardLayout from '@/components/layout/dashboard-layout'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
-import { mockUserSettings, mockSystemSettings } from '@/lib/mockData'
+import { useSettings } from '@/contexts/SettingsContext'
+import { useState } from 'react'
+import { Check } from 'lucide-react'
 
 export default function SettingsPage() {
-  const userSettings = mockUserSettings
-  const systemSettings = mockSystemSettings
+  const { settings, updateSettings, resetSettings } = useSettings()
+  const [showSaveMessage, setShowSaveMessage] = useState(false)
+
+  const handleSave = () => {
+    setShowSaveMessage(true)
+    setTimeout(() => setShowSaveMessage(false), 3000)
+  }
+
+  const handleReset = () => {
+    if (confirm('Are you sure you want to reset all settings to defaults?')) {
+      resetSettings()
+      setShowSaveMessage(true)
+      setTimeout(() => setShowSaveMessage(false), 3000)
+    }
+  }
 
   return (
     <DashboardLayout>
       <div className="space-y-6">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">Settings</h1>
-          <p className="text-muted-foreground">
-            Manage your application preferences and system configuration
-          </p>
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-3xl font-bold tracking-tight">Settings</h1>
+            <p className="text-muted-foreground">
+              Manage your application preferences and system configuration
+            </p>
+          </div>
+          {showSaveMessage && (
+            <div className="flex items-center gap-2 bg-green-100 text-green-800 px-4 py-2 rounded-md">
+              <Check className="h-4 w-4" />
+              <span>Settings saved successfully!</span>
+            </div>
+          )}
         </div>
 
         <div className="grid gap-6 lg:grid-cols-2">
@@ -33,7 +58,11 @@ export default function SettingsPage() {
                     <p className="font-medium">Theme</p>
                     <p className="text-sm text-muted-foreground">Choose your preferred theme</p>
                   </div>
-                  <select className="px-3 py-2 border rounded-md" defaultValue={userSettings.theme}>
+                  <select 
+                    className="px-3 py-2 border rounded-md" 
+                    value={settings.theme}
+                    onChange={(e) => updateSettings({ theme: e.target.value })}
+                  >
                     <option value="light">Light</option>
                     <option value="dark">Dark</option>
                     <option value="system">System</option>
@@ -45,24 +74,50 @@ export default function SettingsPage() {
                     <p className="font-medium">Language</p>
                     <p className="text-sm text-muted-foreground">Select your language</p>
                   </div>
-                  <select className="px-3 py-2 border rounded-md" defaultValue={userSettings.language}>
+                  <select 
+                    className="px-3 py-2 border rounded-md" 
+                    value={settings.language}
+                    onChange={(e) => updateSettings({ language: e.target.value })}
+                  >
                     <option value="en-US">English (US)</option>
                     <option value="en-GB">English (UK)</option>
-                    <option value="es-ES">Spanish</option>
-                    <option value="fr-FR">French</option>
+                    <option value="en-PK">English (Pakistan)</option>
+                    <option value="ur-PK">Urdu (Pakistan)</option>
                   </select>
                 </div>
 
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="font-medium">Currency</p>
-                    <p className="text-sm text-muted-foreground">Default currency for display</p>
+                    <p className="text-sm text-muted-foreground">Default currency for display throughout the app</p>
                   </div>
-                  <select className="px-3 py-2 border rounded-md" defaultValue={userSettings.currency}>
-                    <option value="USD">USD ($)</option>
-                    <option value="EUR">EUR (€)</option>
-                    <option value="GBP">GBP (£)</option>
-                    <option value="JPY">JPY (¥)</option>
+                  <select 
+                    className="px-3 py-2 border rounded-md font-medium" 
+                    value={settings.currency}
+                    onChange={(e) => {
+                      const currency = e.target.value
+                      const localeMap: Record<string, string> = {
+                        'PKR': 'en-PK',
+                        'USD': 'en-US',
+                        'EUR': 'en-GB',
+                        'GBP': 'en-GB',
+                        'INR': 'en-IN',
+                        'AED': 'en-AE',
+                        'SAR': 'en-SA',
+                      }
+                      updateSettings({ 
+                        currency, 
+                        locale: localeMap[currency] || 'en-US' 
+                      })
+                    }}
+                  >
+                    <option value="PKR">PKR (Rs) - Pakistani Rupee</option>
+                    <option value="USD">USD ($) - US Dollar</option>
+                    <option value="EUR">EUR (€) - Euro</option>
+                    <option value="GBP">GBP (£) - British Pound</option>
+                    <option value="INR">INR (₹) - Indian Rupee</option>
+                    <option value="AED">AED (د.إ) - UAE Dirham</option>
+                    <option value="SAR">SAR (ر.س) - Saudi Riyal</option>
                   </select>
                 </div>
 
@@ -71,9 +126,29 @@ export default function SettingsPage() {
                     <p className="font-medium">Time Format</p>
                     <p className="text-sm text-muted-foreground">Choose time display format</p>
                   </div>
-                  <select className="px-3 py-2 border rounded-md" defaultValue={userSettings.timeFormat}>
+                  <select 
+                    className="px-3 py-2 border rounded-md" 
+                    value={settings.timeFormat}
+                    onChange={(e) => updateSettings({ timeFormat: e.target.value as '12h' | '24h' })}
+                  >
                     <option value="12h">12 Hour</option>
                     <option value="24h">24 Hour</option>
+                  </select>
+                </div>
+
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="font-medium">Date Format</p>
+                    <p className="text-sm text-muted-foreground">Choose date display format</p>
+                  </div>
+                  <select 
+                    className="px-3 py-2 border rounded-md" 
+                    value={settings.dateFormat}
+                    onChange={(e) => updateSettings({ dateFormat: e.target.value })}
+                  >
+                    <option value="dd/MM/yyyy">DD/MM/YYYY</option>
+                    <option value="MM/dd/yyyy">MM/DD/YYYY</option>
+                    <option value="yyyy-MM-dd">YYYY-MM-DD</option>
                   </select>
                 </div>
               </div>
@@ -96,7 +171,10 @@ export default function SettingsPage() {
                 </div>
                 <input 
                   type="checkbox" 
-                  defaultChecked={userSettings.notifications.email}
+                  checked={settings.notifications.email}
+                  onChange={(e) => updateSettings({ 
+                    notifications: { ...settings.notifications, email: e.target.checked } 
+                  })}
                   className="h-4 w-4"
                 />
               </div>
@@ -108,7 +186,10 @@ export default function SettingsPage() {
                 </div>
                 <input 
                   type="checkbox" 
-                  defaultChecked={userSettings.notifications.push}
+                  checked={settings.notifications.push}
+                  onChange={(e) => updateSettings({ 
+                    notifications: { ...settings.notifications, push: e.target.checked } 
+                  })}
                   className="h-4 w-4"
                 />
               </div>
@@ -120,7 +201,10 @@ export default function SettingsPage() {
                 </div>
                 <input 
                   type="checkbox" 
-                  defaultChecked={userSettings.notifications.paymentAlerts}
+                  checked={settings.notifications.paymentAlerts}
+                  onChange={(e) => updateSettings({ 
+                    notifications: { ...settings.notifications, paymentAlerts: e.target.checked } 
+                  })}
                   className="h-4 w-4"
                 />
               </div>
@@ -132,7 +216,10 @@ export default function SettingsPage() {
                 </div>
                 <input 
                   type="checkbox" 
-                  defaultChecked={userSettings.notifications.expenseAlerts}
+                  checked={settings.notifications.expenseAlerts}
+                  onChange={(e) => updateSettings({ 
+                    notifications: { ...settings.notifications, expenseAlerts: e.target.checked } 
+                  })}
                   className="h-4 w-4"
                 />
               </div>
@@ -144,127 +231,67 @@ export default function SettingsPage() {
                 </div>
                 <input 
                   type="checkbox" 
-                  defaultChecked={userSettings.notifications.weeklyReport}
+                  checked={settings.notifications.weeklyReport}
+                  onChange={(e) => updateSettings({ 
+                    notifications: { ...settings.notifications, weeklyReport: e.target.checked } 
+                  })}
                   className="h-4 w-4"
                 />
               </div>
             </CardContent>
           </Card>
 
-          {/* System Settings */}
-          <Card>
+          {/* Currency Information */}
+          <Card className="lg:col-span-2">
             <CardHeader>
-              <CardTitle>System Configuration</CardTitle>
+              <CardTitle>Currency Settings</CardTitle>
               <CardDescription>
-                Global system settings and company information
+                Current currency configuration and preview
               </CardDescription>
             </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid gap-4">
-                <div>
-                  <label className="text-sm font-medium">Company Name</label>
-                  <input 
-                    type="text" 
-                    defaultValue={systemSettings.companyName}
-                    className="w-full px-3 py-2 border rounded-md mt-1"
-                  />
+            <CardContent>
+              <div className="grid gap-4 md:grid-cols-3">
+                <div className="p-4 border rounded-lg">
+                  <p className="text-sm text-muted-foreground">Selected Currency</p>
+                  <p className="text-2xl font-bold mt-2">{settings.currency}</p>
                 </div>
-
-                <div>
-                  <label className="text-sm font-medium">Default Currency</label>
-                  <select className="w-full px-3 py-2 border rounded-md mt-1" defaultValue={systemSettings.defaultCurrency}>
-                    <option value="USD">USD ($)</option>
-                    <option value="EUR">EUR (€)</option>
-                    <option value="GBP">GBP (£)</option>
-                  </select>
+                <div className="p-4 border rounded-lg">
+                  <p className="text-sm text-muted-foreground">Locale</p>
+                  <p className="text-2xl font-bold mt-2">{settings.locale}</p>
                 </div>
-
-                <div>
-                  <label className="text-sm font-medium">Tax Rate (%)</label>
-                  <input 
-                    type="number" 
-                    defaultValue={systemSettings.taxRate}
-                    className="w-full px-3 py-2 border rounded-md mt-1"
-                    step="0.1"
-                    min="0"
-                    max="100"
-                  />
-                </div>
-
-                <div>
-                  <label className="text-sm font-medium">Fiscal Year Start</label>
-                  <select className="w-full px-3 py-2 border rounded-md mt-1" defaultValue={systemSettings.fiscalYearStart}>
-                    <option value="January">January</option>
-                    <option value="April">April</option>
-                    <option value="July">July</option>
-                    <option value="October">October</option>
-                  </select>
+                <div className="p-4 border rounded-lg">
+                  <p className="text-sm text-muted-foreground">Sample Amount</p>
+                  <p className="text-2xl font-bold mt-2">
+                    {new Intl.NumberFormat(settings.locale, {
+                      style: 'currency',
+                      currency: settings.currency,
+                    }).format(150000)}
+                  </p>
                 </div>
               </div>
-            </CardContent>
-          </Card>
-
-          {/* Security Settings */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Security</CardTitle>
-              <CardDescription>
-                Manage security and access settings
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="font-medium">Two-Factor Authentication</p>
-                  <p className="text-sm text-muted-foreground">Add an extra layer of security</p>
-                </div>
-                <input 
-                  type="checkbox" 
-                  defaultChecked={systemSettings.security.twoFactorAuth}
-                  className="h-4 w-4"
-                />
-              </div>
-
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="font-medium">Audit Logging</p>
-                  <p className="text-sm text-muted-foreground">Track all system activities</p>
-                </div>
-                <input 
-                  type="checkbox" 
-                  defaultChecked={systemSettings.security.auditLogging}
-                  className="h-4 w-4"
-                />
-              </div>
-
-              <div>
-                <label className="text-sm font-medium">Session Timeout (minutes)</label>
-                <input 
-                  type="number" 
-                  defaultValue={systemSettings.security.sessionTimeout}
-                  className="w-full px-3 py-2 border rounded-md mt-1"
-                  min="15"
-                  max="1440"
-                />
-              </div>
-
-              <div>
-                <label className="text-sm font-medium">Minimum Password Length</label>
-                <input 
-                  type="number" 
-                  defaultValue={systemSettings.security.passwordPolicy.minLength}
-                  className="w-full px-3 py-2 border rounded-md mt-1"
-                  min="6"
-                  max="32"
-                />
+              <div className="mt-4 p-4 bg-blue-50 dark:bg-blue-950 rounded-lg">
+                <p className="text-sm font-medium text-blue-900 dark:text-blue-100">
+                  ℹ️ Currency changes apply to all amounts displayed throughout the application including:
+                </p>
+                <ul className="mt-2 text-sm text-blue-800 dark:text-blue-200 list-disc list-inside">
+                  <li>Dashboard statistics and charts</li>
+                  <li>Payment records (PayIn/PayOut)</li>
+                  <li>Expense submissions and approvals</li>
+                  <li>Employee salaries and advances</li>
+                  <li>PDF reports and exports</li>
+                </ul>
               </div>
             </CardContent>
           </Card>
         </div>
 
-        <div className="flex justify-end gap-4">
-          <Button variant="outline">Reset to Defaults</Button>
-          <Button>Save Changes</Button>
+        <div className="flex justify-end gap-4 pb-8">
+          <Button variant="outline" onClick={handleReset}>
+            Reset to Defaults
+          </Button>
+          <Button onClick={handleSave}>
+            Save Changes
+          </Button>
         </div>
       </div>
     </DashboardLayout>

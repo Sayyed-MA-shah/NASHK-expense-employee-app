@@ -8,7 +8,8 @@ import { Input } from '@/components/ui/input'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { getPayments, createPayment, deletePayment } from '@/lib/api'
-import { formatCurrency, formatDate, generateId } from '@/lib/utils'
+import { formatDate, generateId } from '@/lib/utils'
+import { useCurrencyFormat } from '@/hooks/useCurrencyFormat'
 import { TrendingUp, TrendingDown, Wallet, Calendar, Plus, X, Trash2, Trash, FileDown } from 'lucide-react'
 import jsPDF from 'jspdf'
 import autoTable from 'jspdf-autotable'
@@ -22,6 +23,7 @@ interface PaymentRow {
 }
 
 export default function PaymentsPage() {
+  const { formatCurrency, currency } = useCurrencyFormat()
   const [activeTab, setActiveTab] = useState<'payin' | 'payout'>('payin')
   const [fromDate, setFromDate] = useState('')
   const [toDate, setToDate] = useState('')

@@ -122,13 +122,33 @@ export function getEmployeeFullName(employee: Employee): string {
 
 export function formatCurrency(
   amount: number,
-  currency: string = 'USD',
-  locale: string = 'en-US'
+  currency?: string,
+  locale?: string
 ): string {
-  return new Intl.NumberFormat(locale, {
+  // Use provided values or defaults
+  const currencyCode = currency || 'PKR'
+  const localeCode = locale || 'en-PK'
+  
+  return new Intl.NumberFormat(localeCode, {
     style: 'currency',
-    currency,
+    currency: currencyCode,
   }).format(amount)
+}
+
+// Currency symbols map for quick display
+export const currencySymbols: Record<string, string> = {
+  USD: '$',
+  EUR: '€',
+  GBP: '£',
+  JPY: '¥',
+  PKR: 'Rs',
+  INR: '₹',
+  AED: 'د.إ',
+  SAR: 'ر.س',
+}
+
+export function getCurrencySymbol(currency: string): string {
+  return currencySymbols[currency] || currency
 }
 
 export function formatDate(

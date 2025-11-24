@@ -1,14 +1,16 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import DashboardLayout from '@/components/layout/dashboard-layout'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { mockPayments } from '@/lib/mockData'
-import { formatCurrency, formatDate, getStatusColor, generateId } from '@/lib/utils'
-import { TrendingUp, TrendingDown, Wallet, Calendar, Plus, X, Trash2, Edit, Trash } from 'lucide-react'
+import { getPayments, createPayment, deletePayment } from '@/lib/api'
+import { formatCurrency, formatDate, generateId } from '@/lib/utils'
+import { TrendingUp, TrendingDown, Wallet, Calendar, Plus, X, Trash2, Edit, Trash, FileDown } from 'lucide-react'
+import jsPDF from 'jspdf'
+import autoTable from 'jspdf-autotable'
 
 interface PaymentRow {
   id: string
@@ -20,7 +22,8 @@ interface PaymentRow {
 
 export default function PaymentsPage() {
   const [activeTab, setActiveTab] = useState<'payin' | 'payout'>('payin')
-  const [dateFilter, setDateFilter] = useState('')
+  const [fromDate, setFromDate] = useState('')
+  const [toDate, setToDate] = useState('')
   const [showAddPaymentForm, setShowAddPaymentForm] = useState(false)
   const [paymentRows, setPaymentRows] = useState<PaymentRow[]>([
     {
@@ -31,13 +34,47 @@ export default function PaymentsPage() {
       type: 'payin'
     }
   ])
-  const [payments, setPayments] = useState(mockPayments)
+  const [payments, setPayments] = useState<any[]>([])
+  const [loading, setLoading] = useState(true)
 
-  // Filter payments based on type and date
+  // Fetch payments from Supabase
+  useEffect(() => {
+    loadPayments()
+  }, [])
+
+  async function loadPayments() {
+    try {
+      setLoading(true)
+      const data = await getPayments()
+      setPayments(data)
+    } catch (error) {
+      console.error('Error loading payments:', error)
+      alert('Failed to load payments')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  // Filter payments based on type and date range
   const filteredPayments = payments.filter(payment => {
     const matchesType = activeTab === 'payin' ? payment.type === 'credit' : payment.type === 'debit'
-    const matchesDate = !dateFilter || payment.createdAt.toDateString() === new Date(dateFilter).toDateString()
-    return matchesType && matchesDate
+    
+    const paymentDate = new Date(payment.created_at)
+    let matchesDateRange = true
+    
+    if (fromDate) {
+      const from = new Date(fromDate)
+      from.setHours(0, 0, 0, 0)
+      matchesDateRange = matchesDateRange && paymentDate >= from
+    }
+    
+    if (toDate) {
+      const to = new Date(toDate)
+      to.setHours(23, 59, 59, 999)
+      matchesDateRange = matchesDateRange && paymentDate <= to
+    }
+    
+    return matchesType && matchesDateRange
   })
 
   // Calculate KPI values
@@ -75,9 +112,15 @@ export default function PaymentsPage() {
     ))
   }
 
-  const handleDeletePayment = (paymentId: string) => {
-    if (confirm('Are you sure you want to delete this payment?')) {
+  const handleDeletePayment = async (paymentId: string) => {
+    if (!confirm('Are you sure you want to delete this payment?')) return
+    
+    try {
+      await deletePayment(paymentId)
       setPayments(prev => prev.filter(p => p.id !== paymentId))
+    } catch (error) {
+      console.error('Error deleting payment:', error)
+      alert('Failed to delete payment')
     }
   }
 
@@ -86,7 +129,7 @@ export default function PaymentsPage() {
     alert('Edit functionality will be implemented soon')
   }
 
-  const validateAndSubmitPayments = () => {
+  const validateAndSubmitPayments = async () => {
     const validRows = paymentRows.filter(row => 
       row.date && row.description.trim() && row.amount && parseFloat(row.amount) > 0 && row.type
     )
@@ -96,39 +139,173 @@ export default function PaymentsPage() {
       return
     }
 
-    // Create new payments and add to state
-    const newPayments = validRows.map(row => ({
-      id: generateId(),
-      amount: parseFloat(row.amount),
-      currency: 'USD',
-      status: 'completed' as const,
-      type: row.type === 'payin' ? ('credit' as const) : ('debit' as const),
-      method: 'bank_transfer' as const,
-      description: row.description,
-      reference: `PAY-${new Date().getFullYear()}-${String(Math.floor(Math.random() * 1000)).padStart(3, '0')}`,
-      customerId: 'cust_manual',
-      customerName: 'Manual Entry',
-      customerEmail: 'manual@entry.com',
-      transactionFee: 0,
-      netAmount: parseFloat(row.amount),
-      createdAt: new Date(row.date + 'T12:00:00Z'),
-      updatedAt: new Date()
-    }))
+    try {
+      // Save each payment to Supabase
+      for (const row of validRows) {
+        await createPayment({
+          amount: parseFloat(row.amount),
+          type: row.type === 'payin' ? 'credit' : 'debit',
+          description: row.description,
+          reference: `PAY-${new Date().getFullYear()}-${String(Date.now()).slice(-6)}`
+        })
+      }
 
-    // Add new payments to the state
-    setPayments(prev => [...newPayments, ...prev])
+      alert(`${validRows.length} payment(s) saved successfully!`)
+      
+      // Reload payments from database
+      await loadPayments()
+      
+      // Reset form
+      setPaymentRows([{
+        id: '1',
+        date: '',
+        description: '',
+        amount: '',
+        type: 'payin'
+      }])
+      setShowAddPaymentForm(false)
+    } catch (error) {
+      console.error('Error saving payments:', error)
+      alert('Failed to save payments. Please try again.')
+    }
+  }
 
-    alert(`${validRows.length} payment(s) saved successfully!`)
+  const generatePDFReport = () => {
+    if (!fromDate && !toDate) {
+      alert('Please select a date range to generate the report')
+      return
+    }
+
+    const doc = new jsPDF()
+    const pageWidth = doc.internal.pageSize.width
+    const pageHeight = doc.internal.pageSize.height
     
-    // Reset form
-    setPaymentRows([{
-      id: '1',
-      date: '',
-      description: '',
-      amount: '',
-      type: 'payin'
-    }])
-    setShowAddPaymentForm(false)
+    // Company Header
+    doc.setFillColor(41, 128, 185) // Professional blue
+    doc.rect(0, 0, pageWidth, 35, 'F')
+    
+    doc.setTextColor(255, 255, 255)
+    doc.setFontSize(24)
+    doc.setFont('helvetica', 'bold')
+    doc.text('NASHK', 15, 20)
+    
+    doc.setFontSize(10)
+    doc.setFont('helvetica', 'normal')
+    doc.text('Expense & Employee Management System', 15, 27)
+    
+    // Report Title
+    doc.setTextColor(0, 0, 0)
+    doc.setFontSize(16)
+    doc.setFont('helvetica', 'bold')
+    const reportTitle = activeTab === 'payin' ? 'PAYIN TRANSACTIONS REPORT' : 'PAYOUT TRANSACTIONS REPORT'
+    doc.text(reportTitle, pageWidth / 2, 50, { align: 'center' })
+    
+    // Date Range
+    doc.setFontSize(10)
+    doc.setFont('helvetica', 'normal')
+    doc.setTextColor(100, 100, 100)
+    const dateRangeText = fromDate && toDate 
+      ? `Period: ${new Date(fromDate).toLocaleDateString()} - ${new Date(toDate).toLocaleDateString()}`
+      : fromDate 
+      ? `From: ${new Date(fromDate).toLocaleDateString()}`
+      : `Until: ${new Date(toDate).toLocaleDateString()}`
+    doc.text(dateRangeText, pageWidth / 2, 57, { align: 'center' })
+    
+    doc.setTextColor(0, 0, 0)
+    doc.text(`Generated: ${new Date().toLocaleString()}`, pageWidth / 2, 63, { align: 'center' })
+    
+    // Summary Box
+    const payinTotal = filteredPayments.filter(p => p.type === 'credit').reduce((sum, p) => sum + p.amount, 0)
+    const payoutTotal = filteredPayments.filter(p => p.type === 'debit').reduce((sum, p) => sum + p.amount, 0)
+    const netBalance = payinTotal - payoutTotal
+    
+    doc.setFillColor(240, 240, 240)
+    doc.roundedRect(15, 70, pageWidth - 30, 30, 3, 3, 'F')
+    
+    doc.setFontSize(9)
+    doc.setFont('helvetica', 'bold')
+    doc.setTextColor(0, 0, 0)
+    
+    const summaryY = 80
+    doc.text('Total Payin:', 25, summaryY)
+    doc.setTextColor(0, 150, 0)
+    doc.text(formatCurrency(payinTotal), 70, summaryY)
+    
+    doc.setTextColor(0, 0, 0)
+    doc.text('Total Payout:', 25, summaryY + 8)
+    doc.setTextColor(220, 0, 0)
+    doc.text(formatCurrency(payoutTotal), 70, summaryY + 8)
+    
+    doc.setTextColor(0, 0, 0)
+    doc.text('Net Balance:', 25, summaryY + 16)
+    if (netBalance >= 0) {
+      doc.setTextColor(0, 150, 0)
+    } else {
+      doc.setTextColor(220, 0, 0)
+    }
+    doc.text(formatCurrency(Math.abs(netBalance)), 70, summaryY + 16)
+    
+    // Transactions Table
+    const tableData = filteredPayments.map(payment => [
+      payment.reference,
+      new Date(payment.created_at).toLocaleDateString(),
+      payment.description,
+      formatCurrency(payment.amount),
+      payment.type === 'credit' ? 'Payin' : 'Payout'
+    ])
+    
+    autoTable(doc, {
+      startY: 110,
+      head: [['Reference', 'Date', 'Description', 'Amount', 'Type']],
+      body: tableData,
+      theme: 'grid',
+      headStyles: {
+        fillColor: [41, 128, 185],
+        textColor: 255,
+        fontStyle: 'bold',
+        fontSize: 9
+      },
+      bodyStyles: {
+        fontSize: 8,
+        textColor: 50
+      },
+      alternateRowStyles: {
+        fillColor: [245, 245, 245]
+      },
+      columnStyles: {
+        0: { cellWidth: 35 },
+        1: { cellWidth: 25 },
+        2: { cellWidth: 70 },
+        3: { cellWidth: 30, halign: 'right' },
+        4: { cellWidth: 20, halign: 'center' }
+      },
+      margin: { left: 15, right: 15 }
+    })
+    
+    // Footer
+    const finalY = (doc as any).lastAutoTable.finalY || 110
+    doc.setFontSize(8)
+    doc.setTextColor(150, 150, 150)
+    doc.setFont('helvetica', 'italic')
+    doc.text(
+      'This is a computer-generated report. For any discrepancies, please contact the finance department.',
+      pageWidth / 2,
+      pageHeight - 15,
+      { align: 'center' }
+    )
+    
+    // Page numbers
+    const pageCount = doc.getNumberOfPages()
+    for (let i = 1; i <= pageCount; i++) {
+      doc.setPage(i)
+      doc.setFontSize(8)
+      doc.setTextColor(100, 100, 100)
+      doc.text(`Page ${i} of ${pageCount}`, pageWidth - 20, pageHeight - 10)
+    }
+    
+    // Save PDF
+    const fileName = `${activeTab}_report_${fromDate || 'all'}_to_${toDate || 'all'}_${new Date().getTime()}.pdf`
+    doc.save(fileName)
   }
 
   return (
@@ -140,6 +317,19 @@ export default function PaymentsPage() {
             <p className="text-muted-foreground">
               Manage and track your payment transactions
             </p>
+          </div>
+          <div className="flex items-center gap-3">
+            <Button 
+              onClick={generatePDFReport}
+              className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700"
+            >
+              <FileDown className="h-4 w-4" />
+              Generate Report
+            </Button>
+            <Button className="flex items-center gap-2" onClick={() => setShowAddPaymentForm(true)}>
+              <Plus className="h-4 w-4" />
+              Add New Payment
+            </Button>
           </div>
         </div>
 
@@ -190,25 +380,32 @@ export default function PaymentsPage() {
         {/* Controls */}
         <div className="flex items-center justify-between gap-4">
           <div className="flex items-center gap-4">
-            <Button className="flex items-center gap-2" onClick={() => setShowAddPaymentForm(true)}>
-              <Plus className="h-4 w-4" />
-              Add New Payment
-            </Button>
-            
             <div className="flex items-center gap-2">
               <Calendar className="h-4 w-4 text-muted-foreground" />
+              <span className="text-sm text-muted-foreground">From:</span>
               <input
                 type="date"
-                value={dateFilter}
-                onChange={(e) => setDateFilter(e.target.value)}
+                value={fromDate}
+                onChange={(e) => setFromDate(e.target.value)}
                 className="px-3 py-2 border border-input rounded-md text-sm"
-                placeholder="Filter by date"
+                placeholder="From date"
               />
-              {dateFilter && (
+              <span className="text-sm text-muted-foreground">To:</span>
+              <input
+                type="date"
+                value={toDate}
+                onChange={(e) => setToDate(e.target.value)}
+                className="px-3 py-2 border border-input rounded-md text-sm"
+                placeholder="To date"
+              />
+              {(fromDate || toDate) && (
                 <Button 
                   variant="outline" 
                   size="sm" 
-                  onClick={() => setDateFilter('')}
+                  onClick={() => {
+                    setFromDate('')
+                    setToDate('')
+                  }}
                 >
                   Clear
                 </Button>
@@ -250,18 +447,29 @@ export default function PaymentsPage() {
               </CardTitle>
               <CardDescription>
                 {filteredPayments.length} {activeTab} transaction{filteredPayments.length !== 1 ? 's' : ''}
-                {dateFilter && ` on ${new Date(dateFilter).toLocaleDateString()}`}
+                {(fromDate || toDate) && (
+                  <span>
+                    {fromDate && toDate ? ` from ${new Date(fromDate).toLocaleDateString()} to ${new Date(toDate).toLocaleDateString()}` : 
+                     fromDate ? ` from ${new Date(fromDate).toLocaleDateString()}` : 
+                     ` until ${new Date(toDate).toLocaleDateString()}`}
+                  </span>
+                )}
               </CardDescription>
             </CardHeader>
             <CardContent>
+              {loading ? (
+                <div className="p-8 text-center text-muted-foreground">
+                  Loading payments...
+                </div>
+              ) : (
               <div className="overflow-x-auto">
                 <table className="w-full">
                   <thead>
                     <tr className="border-b">
                       <th className="text-left p-2 font-medium">Reference</th>
+                      <th className="text-left p-2 font-medium">Date</th>
                       <th className="text-left p-2 font-medium">Description</th>
                       <th className="text-left p-2 font-medium">Amount</th>
-                      <th className="text-left p-2 font-medium">Date</th>
                       <th className="text-left p-2 font-medium">Actions</th>
                     </tr>
                   </thead>
@@ -270,6 +478,7 @@ export default function PaymentsPage() {
                       filteredPayments.map((payment) => (
                         <tr key={payment.id} className="border-b hover:bg-muted/50">
                           <td className="p-2 font-mono text-sm">{payment.reference}</td>
+                          <td className="p-2 text-sm">{formatDate(new Date(payment.created_at), 'short')}</td>
                           <td className="p-2">
                             <p className="font-medium">{payment.description}</p>
                           </td>
@@ -278,7 +487,6 @@ export default function PaymentsPage() {
                               {activeTab === 'payin' ? '+' : '-'}{formatCurrency(payment.amount)}
                             </span>
                           </td>
-                          <td className="p-2 text-sm">{formatDate(payment.createdAt, 'short')}</td>
                           <td className="p-2">
                             <div className="flex items-center gap-2">
                               <Button 
@@ -305,13 +513,14 @@ export default function PaymentsPage() {
                       <tr>
                         <td colSpan={5} className="p-8 text-center text-muted-foreground">
                           No {activeTab} transactions found
-                          {dateFilter && ' for the selected date'}
+                          {(fromDate || toDate) && ' for the selected date range'}
                         </td>
                       </tr>
                     )}
                   </tbody>
                 </table>
               </div>
+              )}
             </CardContent>
           </Card>
         </div>

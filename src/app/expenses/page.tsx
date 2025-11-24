@@ -1,10 +1,10 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import DashboardLayout from '@/components/layout/dashboard-layout'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
-import { mockExpenses, mockExpenseStats } from '@/lib/mockData'
+import { getExpenses, createExpense } from '@/lib/api'
 import { 
   formatCurrency, 
   formatDate, 
@@ -46,9 +46,28 @@ export default function ExpensesPage() {
       description: ''
     }
   ])
-  const [expenses, setExpenses] = useState(mockExpenses)
+  const [expenses, setExpenses] = useState<any[]>([])
+  const [loading, setLoading] = useState(true)
 
   const categories: ExpenseCategory[] = ['setup_purchase', 'rent_bill_guest', 'material', 'logistic', 'outsource']
+
+  // Load expenses from Supabase on mount
+  useEffect(() => {
+    loadExpenses()
+  }, [])
+
+  async function loadExpenses() {
+    try {
+      setLoading(true)
+      const data = await getExpenses()
+      setExpenses(data)
+    } catch (error) {
+      console.error('Error loading expenses:', error)
+      alert('Failed to load expenses. Please try again.')
+    } finally {
+      setLoading(false)
+    }
+  }
 
   // Filter expenses based on active tab and date range
   const filteredExpenses = expenses.filter(expense => {
@@ -93,7 +112,7 @@ export default function ExpensesPage() {
     ))
   }
 
-  const validateAndSubmit = () => {
+  const validateAndSubmit = async () => {
     const validRows = expenseRows.filter(row => 
       row.date && row.category && row.amount && parseFloat(row.amount) > 0 && row.description.trim()
     )
@@ -103,37 +122,39 @@ export default function ExpensesPage() {
       return
     }
 
-    // Create new expenses and add to state
-    const newExpenses = validRows.map(row => ({
-      id: generateId(),
-      amount: parseFloat(row.amount),
-      currency: 'USD',
-      category: row.category,
-      status: 'approved' as const,
-      description: row.description,
-      date: new Date(row.date + 'T12:00:00Z'),
-      employeeId: 'emp_manual',
-      employeeName: 'Manual Entry',
-      receipt: '',
-      tags: [] as string[],
-      createdAt: new Date(),
-      updatedAt: new Date()
-    }))
+    try {
+      // Create expenses in Supabase
+      for (const row of validRows) {
+        await createExpense({
+          amount: parseFloat(row.amount),
+          currency: 'PKR',
+          category: row.category,
+          status: 'approved',
+          description: row.description,
+          date: row.date,
+          employee_id: 'emp_manual',
+          employee_name: 'Manual Entry',
+        } as any)
+      }
 
-    // Add new expenses to the state
-    setExpenses(prev => [...newExpenses, ...prev])
-
-    alert(`${validRows.length} expense(s) submitted successfully!`)
-    
-    // Reset form
-    setExpenseRows([{
-      id: '1',
-      date: '',
-      category: 'setup_purchase',
-      amount: '',
-      description: ''
-    }])
-    setShowAddForm(false)
+      alert(`${validRows.length} expense(s) submitted successfully!`)
+      
+      // Reload expenses from database
+      await loadExpenses()
+      
+      // Reset form
+      setExpenseRows([{
+        id: '1',
+        date: '',
+        category: 'setup_purchase',
+        amount: '',
+        description: ''
+      }])
+      setShowAddForm(false)
+    } catch (error) {
+      console.error('Error saving expenses:', error)
+      alert('Failed to save expenses. Please try again.')
+    }
   }
 
   return (
@@ -290,7 +311,13 @@ export default function ExpensesPage() {
                     </tr>
                   </thead>
                   <tbody>
-                    {filteredExpenses.length > 0 ? (
+                    {loading ? (
+                      <tr>
+                        <td colSpan={7} className="text-center p-8 text-muted-foreground">
+                          Loading expenses...
+                        </td>
+                      </tr>
+                    ) : filteredExpenses.length > 0 ? (
                       filteredExpenses.map((expense) => {
                         const Icon = getExpenseCategoryIcon(expense.category)
                         const colorClass = getExpenseCategoryColor(expense.category)

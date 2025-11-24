@@ -4,13 +4,13 @@ import { useState, useEffect } from 'react'
 import DashboardLayout from '@/components/layout/dashboard-layout'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { formatCurrency, formatNumber } from '@/lib/utils'
-import { getPayments } from '@/lib/api'
+import { getPayments, getExpenses } from '@/lib/api'
 
 export default function Dashboard() {
   const [stats, setStats] = useState({
     totalPayin: 0,
     totalPayout: 0,
-    totalExpenses: 12426.78, // TODO: Connect to expenses API
+    totalExpenses: 0,
     balance: 0,
   })
   const [loading, setLoading] = useState(true)
@@ -22,8 +22,11 @@ export default function Dashboard() {
   async function loadDashboardStats() {
     try {
       setLoading(true)
-      // Fetch all payments
-      const payments = await getPayments()
+      // Fetch all payments and expenses
+      const [payments, expenses] = await Promise.all([
+        getPayments(),
+        getExpenses()
+      ])
       
       // Calculate PayIn (credit) and PayOut (debit)
       const totalPayin = payments
@@ -34,12 +37,15 @@ export default function Dashboard() {
         .filter(p => p.type === 'debit')
         .reduce((sum, p) => sum + p.amount, 0)
       
+      // Calculate total expenses
+      const totalExpenses = expenses.reduce((sum, e) => sum + e.amount, 0)
+      
       const balance = totalPayin - totalPayout
       
       setStats({
         totalPayin,
         totalPayout,
-        totalExpenses: 12426.78, // TODO: Connect to expenses API
+        totalExpenses,
         balance,
       })
     } catch (error) {
@@ -150,9 +156,13 @@ export default function Dashboard() {
               </svg>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{formatCurrency(stats.totalExpenses)}</div>
+              {loading ? (
+                <div className="text-2xl font-bold text-muted-foreground">Loading...</div>
+              ) : (
+                <div className="text-2xl font-bold">{formatCurrency(stats.totalExpenses)}</div>
+              )}
               <p className="text-xs text-muted-foreground">
-                +8.2% from last month
+                All submitted expenses
               </p>
             </CardContent>
           </Card>

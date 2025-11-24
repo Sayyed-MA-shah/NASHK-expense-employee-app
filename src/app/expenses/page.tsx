@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react'
 import DashboardLayout from '@/components/layout/dashboard-layout'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
-import { getExpenses, createExpense } from '@/lib/api'
+import { getExpenses, createExpense, deleteExpense } from '@/lib/api'
 import { 
   formatCurrency, 
   formatDate, 
@@ -22,7 +22,8 @@ import {
   FileText, 
   TrendingUp,
   X,
-  Trash2
+  Trash2,
+  Pencil
 } from 'lucide-react'
 
 interface ExpenseRow {
@@ -69,6 +70,27 @@ export default function ExpensesPage() {
     } finally {
       setLoading(false)
     }
+  }
+
+  async function handleDeleteExpense(id: string) {
+    if (!confirm('Are you sure you want to delete this expense?')) {
+      return
+    }
+
+    try {
+      await deleteExpense(id)
+      alert('Expense deleted successfully!')
+      await loadExpenses()
+    } catch (error) {
+      console.error('Error deleting expense:', error)
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error'
+      alert(`Failed to delete expense: ${errorMessage}`)
+    }
+  }
+
+  function handleEditExpense(expense: any) {
+    // TODO: Implement edit functionality
+    alert('Edit functionality coming soon!')
   }
 
   // Filter expenses based on active tab and date range
@@ -310,17 +332,15 @@ export default function ExpensesPage() {
                     <tr className="border-b">
                       <th className="text-left p-2 font-medium">Date</th>
                       <th className="text-left p-2 font-medium">Category</th>
-                      <th className="text-left p-2 font-medium">Amount</th>
                       <th className="text-left p-2 font-medium">Description/Notes</th>
-                      <th className="text-left p-2 font-medium">Status</th>
-                      <th className="text-left p-2 font-medium">Employee</th>
+                      <th className="text-left p-2 font-medium">Amount</th>
                       <th className="text-left p-2 font-medium">Actions</th>
                     </tr>
                   </thead>
                   <tbody>
                     {loading ? (
                       <tr>
-                        <td colSpan={7} className="text-center p-8 text-muted-foreground">
+                        <td colSpan={5} className="text-center p-8 text-muted-foreground">
                           Loading expenses...
                         </td>
                       </tr>
@@ -338,23 +358,34 @@ export default function ExpensesPage() {
                                 <span className="text-sm">{getExpenseCategoryName(expense.category)}</span>
                               </div>
                             </td>
-                            <td className="p-2 font-medium">{formatCurrency(expense.amount)}</td>
                             <td className="p-2 text-sm max-w-xs truncate">{expense.description}</td>
+                            <td className="p-2 font-medium">{formatCurrency(expense.amount)}</td>
                             <td className="p-2">
-                              <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(expense.status)}`}>
-                                {expense.status}
-                              </span>
-                            </td>
-                            <td className="p-2 text-sm">{expense.employeeName}</td>
-                            <td className="p-2">
-                              <Button variant="ghost" size="sm">View</Button>
+                              <div className="flex items-center gap-1">
+                                <Button 
+                                  variant="ghost" 
+                                  size="sm"
+                                  onClick={() => handleEditExpense(expense)}
+                                  className="h-8 w-8 p-0"
+                                >
+                                  <Pencil className="h-4 w-4" />
+                                </Button>
+                                <Button 
+                                  variant="ghost" 
+                                  size="sm"
+                                  onClick={() => handleDeleteExpense(expense.id)}
+                                  className="h-8 w-8 p-0 text-destructive hover:text-destructive hover:bg-destructive/10"
+                                >
+                                  <Trash2 className="h-4 w-4" />
+                                </Button>
+                              </div>
                             </td>
                           </tr>
                         )
                       })
                     ) : (
                       <tr>
-                        <td colSpan={7} className="p-8 text-center text-muted-foreground">
+                        <td colSpan={5} className="p-8 text-center text-muted-foreground">
                           No expenses found for the selected criteria
                         </td>
                       </tr>

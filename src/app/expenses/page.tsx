@@ -4,6 +4,8 @@ import { useState, useEffect } from 'react'
 import DashboardLayout from '@/components/layout/dashboard-layout'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog'
+import { ToastContainer, useToast } from '@/components/ui/toast'
 import { getExpenses, createExpense, deleteExpense } from '@/lib/api'
 import { 
   formatCurrency, 
@@ -23,7 +25,8 @@ import {
   TrendingUp,
   X,
   Trash2,
-  Pencil
+  Pencil,
+  AlertTriangle
 } from 'lucide-react'
 
 interface ExpenseRow {
@@ -49,6 +52,11 @@ export default function ExpensesPage() {
   ])
   const [expenses, setExpenses] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
+  const [expenseToDelete, setExpenseToDelete] = useState<string | null>(null)
+  const [validationDialogOpen, setValidationDialogOpen] = useState(false)
+  const [validationMessage, setValidationMessage] = useState('')
+  const { toasts, toast, removeToast } = useToast()
 
   const categories: ExpenseCategory[] = ['setup_purchase', 'rent_bill_guest', 'material', 'logistic', 'outsource']
 
@@ -65,32 +73,38 @@ export default function ExpensesPage() {
     } catch (error) {
       console.error('Error loading expenses:', error)
       const errorMessage = error instanceof Error ? error.message : 'Unknown error'
-      alert(`Failed to load expenses: ${errorMessage}`)
+      toast.error('Failed to load expenses', errorMessage)
       setExpenses([])
     } finally {
       setLoading(false)
     }
   }
 
-  async function handleDeleteExpense(id: string) {
-    if (!confirm('Are you sure you want to delete this expense?')) {
-      return
-    }
+  function handleDeleteExpense(id: string) {
+    setExpenseToDelete(id)
+    setDeleteDialogOpen(true)
+  }
+
+  async function confirmDeleteExpense() {
+    if (!expenseToDelete) return
 
     try {
-      await deleteExpense(id)
-      alert('Expense deleted successfully!')
+      await deleteExpense(expenseToDelete)
+      toast.success('Expense deleted', 'The expense has been deleted successfully')
       await loadExpenses()
     } catch (error) {
       console.error('Error deleting expense:', error)
       const errorMessage = error instanceof Error ? error.message : 'Unknown error'
-      alert(`Failed to delete expense: ${errorMessage}`)
+      toast.error('Failed to delete expense', errorMessage)
+    } finally {
+      setDeleteDialogOpen(false)
+      setExpenseToDelete(null)
     }
   }
 
   function handleEditExpense(expense: any) {
     // TODO: Implement edit functionality
-    alert('Edit functionality coming soon!')
+    toast.info('Coming Soon', 'Edit functionality will be available soon')
   }
 
   // Filter expenses based on active tab and date range
@@ -143,7 +157,8 @@ export default function ExpensesPage() {
     )
     
     if (validRows.length === 0) {
-      alert('Please fill in all required fields for at least one expense row.')
+      setValidationMessage('Please fill in all required fields for at least one expense row.')
+      setValidationDialogOpen(true)
       return
     }
 
@@ -165,7 +180,7 @@ export default function ExpensesPage() {
         await createExpense(expenseData as any)
       }
 
-      alert(`${validRows.length} expense(s) submitted successfully!`)
+      toast.success('Expenses submitted', `${validRows.length} expense(s) submitted successfully`)
       
       // Reload expenses from database
       await loadExpenses()
@@ -182,7 +197,7 @@ export default function ExpensesPage() {
     } catch (error) {
       console.error('Error saving expenses:', error)
       const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred'
-      alert(`Failed to save expenses: ${errorMessage}`)
+      toast.error('Failed to save expenses', errorMessage)
     }
   }
 
@@ -520,6 +535,61 @@ export default function ExpensesPage() {
           </div>
         )}
       </div>
+
+      {/* Delete Confirmation Dialog */}
+      <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <AlertTriangle className="h-5 w-5 text-destructive" />
+              Delete Expense
+            </DialogTitle>
+            <DialogDescription>
+              Are you sure you want to delete this expense? This action cannot be undone.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => {
+                setDeleteDialogOpen(false)
+                setExpenseToDelete(null)
+              }}
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={confirmDeleteExpense}
+            >
+              Delete
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Validation Dialog */}
+      <Dialog open={validationDialogOpen} onOpenChange={setValidationDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <AlertTriangle className="h-5 w-5 text-yellow-500" />
+              Validation Error
+            </DialogTitle>
+            <DialogDescription>
+              {validationMessage}
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button onClick={() => setValidationDialogOpen(false)}>
+              OK
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Toast Notifications */}
+      <ToastContainer toasts={toasts} onRemove={removeToast} />
     </DashboardLayout>
   )
 }

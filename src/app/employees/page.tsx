@@ -22,6 +22,7 @@ import {
 
 export default function EmployeesPage() {
   const router = useRouter()
+  const [activeTab, setActiveTab] = useState<'contractual' | 'fixed'>('contractual')
   const [employees, setEmployees] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [searchTerm, setSearchTerm] = useState('')
@@ -89,19 +90,22 @@ export default function EmployeesPage() {
     }
   }
 
-  // Filter only contractual employees
-  const contractualEmployees = employees.filter(emp => 
-    emp.type === 'contractual' && 
-    (searchTerm === '' || 
-     `${emp.first_name} ${emp.last_name}`.toLowerCase().includes(searchTerm.toLowerCase()) ||
-     emp.phone.includes(searchTerm))
+  // Filter employees by type
+  const contractualEmployees = employees.filter(emp => emp.type === 'contractual')
+  const fixedEmployees = employees.filter(emp => emp.type === 'fixed')
+
+  // Get employees for active tab with search filter
+  const activeEmployees = (activeTab === 'contractual' ? contractualEmployees : fixedEmployees).filter(emp =>
+    searchTerm === '' || 
+    `${emp.first_name} ${emp.last_name}`.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    emp.phone.includes(searchTerm)
   )
 
-  // Calculate stats
-  const totalEmployees = contractualEmployees.length
-  const tempPaidSalary = contractualEmployees.reduce((sum, emp) => sum + (emp.advance_paid || 0), 0)
-  const dueSalaryTotal = contractualEmployees.reduce((sum, emp) => sum + (emp.balance > 0 ? emp.balance : 0), 0)
-  const totalAdvancePaid = contractualEmployees.reduce((sum, emp) => sum + (emp.balance < 0 ? Math.abs(emp.balance) : 0), 0)
+  // Calculate stats for active tab
+  const totalEmployees = activeEmployees.length
+  const tempPaidSalary = activeEmployees.reduce((sum, emp) => sum + (emp.advance_paid || 0), 0)
+  const dueSalaryTotal = activeEmployees.reduce((sum, emp) => sum + (emp.balance > 0 ? emp.balance : 0), 0)
+  const totalAdvancePaid = activeEmployees.reduce((sum, emp) => sum + (emp.balance < 0 ? Math.abs(emp.balance) : 0), 0)
 
   async function handleAddEmployee() {
     if (!addForm.fullName.trim() || !addForm.phone.trim() || !addForm.role.trim()) {
@@ -119,7 +123,7 @@ export default function EmployeesPage() {
         last_name: lastName,
         phone: addForm.phone,
         role: addForm.role,
-        type: 'contractual',
+        type: activeTab,
         status: 'active',
         hire_date: new Date().toISOString().split('T')[0],
         total_earned: 0,
@@ -205,11 +209,13 @@ export default function EmployeesPage() {
         <div className="flex justify-between items-center">
           <div>
             <h1 className="text-3xl font-bold">Employees</h1>
-            <p className="text-muted-foreground">Manage your contractual employees</p>
+            <p className="text-muted-foreground">
+              {activeTab === 'contractual' ? 'Manage your contractual employees' : 'Manage your fixed employees'}
+            </p>
           </div>
           <Button onClick={() => setShowAddForm(true)}>
             <UserPlus className="w-4 h-4 mr-2" />
-            Add Temp Employee
+            {activeTab === 'contractual' ? 'Add Temp Employee' : 'Add Fixed Employee'}
           </Button>
         </div>
 
@@ -222,7 +228,9 @@ export default function EmployeesPage() {
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">{totalEmployees}</div>
-              <p className="text-xs text-muted-foreground">Contractual employees</p>
+              <p className="text-xs text-muted-foreground">
+                {activeTab === 'contractual' ? 'Contractual employees' : 'Fixed employees'}
+              </p>
             </CardContent>
           </Card>
 
@@ -267,11 +275,37 @@ export default function EmployeesPage() {
           </Card>
         </div>
 
+        {/* Tabs */}
+        <div className="flex space-x-1 rounded-lg bg-muted p-1">
+          <button
+            onClick={() => setActiveTab('contractual')}
+            className={`flex-1 rounded-md px-3 py-2 text-sm font-medium transition-all ${
+              activeTab === 'contractual'
+                ? 'bg-background text-foreground shadow-sm'
+                : 'text-muted-foreground hover:text-foreground'
+            }`}
+          >
+            Contractual / Temp ({contractualEmployees.length})
+          </button>
+          <button
+            onClick={() => setActiveTab('fixed')}
+            className={`flex-1 rounded-md px-3 py-2 text-sm font-medium transition-all ${
+              activeTab === 'fixed'
+                ? 'bg-background text-foreground shadow-sm'
+                : 'text-muted-foreground hover:text-foreground'
+            }`}
+          >
+            Fixed ({fixedEmployees.length})
+          </button>
+        </div>
+
         {/* Search */}
         <Card>
           <CardHeader>
-            <CardTitle>Contractual Employees</CardTitle>
-            <CardDescription>Search and manage your temp employees</CardDescription>
+            <CardTitle>{activeTab === 'contractual' ? 'Contractual Employees' : 'Fixed Employees'}</CardTitle>
+            <CardDescription>
+              {activeTab === 'contractual' ? 'Search and manage your temp employees' : 'Search and manage your fixed employees'}
+            </CardDescription>
           </CardHeader>
           <CardContent>
             <div className="flex gap-4">
@@ -304,7 +338,7 @@ export default function EmployeesPage() {
               <p className="text-muted-foreground">Loading employees...</p>
             </CardContent>
           </Card>
-        ) : contractualEmployees.length > 0 ? (
+        ) : activeEmployees.length > 0 ? (
           <Card>
             <CardContent className="pt-6">
               <div className="overflow-x-auto">
@@ -321,7 +355,7 @@ export default function EmployeesPage() {
                     </tr>
                   </thead>
                   <tbody>
-                    {contractualEmployees.map((employee) => (
+                    {activeEmployees.map((employee) => (
                       <tr key={employee.id} className="border-b hover:bg-muted/50">
                         <td className="p-2 font-medium">
                           <button
@@ -371,7 +405,7 @@ export default function EmployeesPage() {
               <Briefcase className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
               <h3 className="text-lg font-semibold mb-2">No employees found</h3>
               <p className="text-muted-foreground mb-4">
-                {searchTerm ? 'Try adjusting your search' : 'Get started by adding your first temp employee'}
+                {searchTerm ? 'Try adjusting your search' : `Get started by adding your first ${activeTab === 'contractual' ? 'temp' : 'fixed'} employee`}
               </p>
               {!searchTerm && (
                 <Button onClick={() => setShowAddForm(true)}>

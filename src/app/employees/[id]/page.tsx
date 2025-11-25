@@ -68,7 +68,8 @@ export default function EmployeeReportPage() {
 
   const [salaryForm, setSalaryForm] = useState({
     date: new Date().toISOString().split('T')[0],
-    amount: ''
+    amount: '',
+    description: ''
   })
 
   useEffect(() => {
@@ -188,7 +189,8 @@ export default function EmployeeReportPage() {
       await createSalaryPayment({
         employee_id: employeeId,
         payment_date: salaryForm.date,
-        amount: parseFloat(salaryForm.amount)
+        amount: parseFloat(salaryForm.amount),
+        notes: salaryForm.description || null
       })
 
       toast.success('Salary Added', 'Salary payment has been recorded successfully')
@@ -196,7 +198,8 @@ export default function EmployeeReportPage() {
       setShowAddSalary(false)
       setSalaryForm({
         date: new Date().toISOString().split('T')[0],
-        amount: ''
+        amount: '',
+        description: ''
       })
     } catch (error) {
       console.error('Error adding salary:', error)
@@ -477,6 +480,7 @@ export default function EmployeeReportPage() {
                     <tr className="border-b">
                       <th className="text-left p-2 font-medium">Date</th>
                       <th className="text-right p-2 font-medium">Amount</th>
+                      <th className="text-left p-2 font-medium">Description</th>
                       <th className="text-center p-2 font-medium">Action</th>
                     </tr>
                   </thead>
@@ -486,6 +490,7 @@ export default function EmployeeReportPage() {
                         <tr key={sp.id} className="border-b hover:bg-muted/50">
                           <td className="p-2 text-sm">{formatDate(sp.payment_date)}</td>
                           <td className="p-2 text-right font-medium">{formatCurrency(sp.amount)}</td>
+                          <td className="p-2 text-sm text-muted-foreground">{sp.notes || '-'}</td>
                           <td className="p-2 text-center">
                             <Button
                               variant="ghost"
@@ -500,7 +505,7 @@ export default function EmployeeReportPage() {
                       ))
                     ) : (
                       <tr>
-                        <td colSpan={3} className="p-8 text-center text-muted-foreground">
+                        <td colSpan={4} className="p-8 text-center text-muted-foreground">
                           No salary payments found for this period
                         </td>
                       </tr>
@@ -688,6 +693,16 @@ export default function EmployeeReportPage() {
                 className="w-full px-3 py-2 border border-input rounded-md"
                 placeholder="0.00"
                 required
+              />
+            </div>
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Description</label>
+              <textarea
+                value={salaryForm.description}
+                onChange={(e) => setSalaryForm({ ...salaryForm, description: e.target.value })}
+                className="w-full px-3 py-2 border border-input rounded-md"
+                placeholder="e.g., Weekly payment, Advance, Final settlement"
+                rows={3}
               />
             </div>
           </div>

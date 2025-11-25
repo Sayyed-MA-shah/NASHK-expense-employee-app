@@ -7,7 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button'
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { ToastContainer, useToast } from '@/components/ui/toast'
-import { getEmployees, createEmployee, deleteEmployee, updateEmployee } from '@/lib/api'
+import { getEmployees, createEmployee, deleteEmployee, updateEmployee, getWorkRecordsByEmployee, getSalaryPaymentsByEmployee } from '@/lib/api'
 import { formatCurrency } from '@/lib/utils'
 import { 
   Plus, 
@@ -52,7 +52,34 @@ export default function EmployeesPage() {
     try {
       setLoading(true)
       const data = await getEmployees()
-      setEmployees(data || [])
+      
+      // Fetch work records and salary payments for each employee to calculate real totals
+      const employeesWithTotals = await Promise.all(
+        (data || []).map(async (emp) => {
+          try {
+            const [workRecords, salaryPayments] = await Promise.all([
+              getWorkRecordsByEmployee(emp.id),
+              getSalaryPaymentsByEmployee(emp.id)
+            ])
+            
+            const totalEarned = workRecords.reduce((sum, wr) => sum + (wr.quantity * wr.price), 0)
+            const totalPaid = salaryPayments.reduce((sum, sp) => sum + sp.amount, 0)
+            const balance = totalEarned - totalPaid
+            
+            return {
+              ...emp,
+              total_earned: totalEarned,
+              advance_paid: totalPaid,
+              balance: balance
+            }
+          } catch (error) {
+            console.error(`Error loading data for employee ${emp.id}:`, error)
+            return emp
+          }
+        })
+      )
+      
+      setEmployees(employeesWithTotals)
     } catch (error) {
       console.error('Error loading employees:', error)
       toast.error('Failed to load employees', error instanceof Error ? error.message : 'Unknown error')
@@ -72,9 +99,8 @@ export default function EmployeesPage() {
 
   // Calculate stats
   const totalEmployees = contractualEmployees.length
-  const totalEarned = contractualEmployees.reduce((sum, emp) => sum + (emp.total_earned || 0), 0)
-  const totalPaid = contractualEmployees.reduce((sum, emp) => sum + (emp.advance_paid || 0), 0)
-  const totalBalance = contractualEmployees.reduce((sum, emp) => sum + (emp.balance || 0), 0)
+  const tempPaidSalary = contractualEmployees.reduce((sum, emp) => sum + (emp.advance_paid || 0), 0)
+  const dueSalaryTotal = contractualEmployees.reduce((sum, emp) => sum + (emp.balance || 0), 0)
 
   async function handleAddEmployee() {
     if (!addForm.fullName.trim() || !addForm.phone.trim() || !addForm.role.trim()) {
@@ -187,7 +213,7 @@ export default function EmployeesPage() {
         </div>
 
         {/* Stats Grid */}
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">Total Employees</CardTitle>
@@ -201,38 +227,27 @@ export default function EmployeesPage() {
 
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Total Earned</CardTitle>
-              <Briefcase className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{formatCurrency(totalEarned)}</div>
-              <p className="text-xs text-muted-foreground">All time earnings</p>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Total Paid</CardTitle>
-              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="h-4 w-4 text-muted-foreground">
+              <CardTitle className="text-sm font-medium">Temp Paid Salary</CardTitle>
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="h-4 w-4 text-blue-600">
                 <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
               </svg>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-red-600">{formatCurrency(totalPaid)}</div>
-              <p className="text-xs text-muted-foreground">Advances paid</p>
+              <div className="text-2xl font-bold text-blue-600">{formatCurrency(tempPaidSalary)}</div>
+              <p className="text-xs text-muted-foreground">Total salary paid</p>
             </CardContent>
           </Card>
 
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Balance</CardTitle>
-              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="h-4 w-4 text-green-600">
+              <CardTitle className="text-sm font-medium">Due Salary Total</CardTitle>
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="h-4 w-4 text-orange-600">
                 <path d="M3 3v18h18" />
                 <path d="m19 9-5 5-4-4-3 3" />
               </svg>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-green-600">{formatCurrency(totalBalance)}</div>
+              <div className="text-2xl font-bold text-orange-600">{formatCurrency(dueSalaryTotal)}</div>
               <p className="text-xs text-muted-foreground">Outstanding balance</p>
             </CardContent>
           </Card>

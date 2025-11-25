@@ -148,6 +148,16 @@ export async function createSalaryPayment(payment: SalaryPaymentInsert) {
   return data as SalaryPaymentRow
 }
 
+export async function deleteSalaryPayment(id: string) {
+  const { error } = await supabase
+    .from('salary_payments')
+    .delete()
+    .eq('id', id)
+  
+  if (error) throw error
+  return true
+}
+
 // ============================================
 // ADVANCES
 // ============================================

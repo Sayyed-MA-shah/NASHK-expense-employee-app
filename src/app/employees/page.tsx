@@ -1,90 +1,174 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import DashboardLayout from '@/components/layout/dashboard-layout'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import ConfirmationDialog from '@/components/reports/ConfirmationDialog'
-import { mockEmployees, mockEmployeeStats } from '@/lib/mockData'
-import { 
-  formatCurrency, 
-  formatDate, 
-  getStatusColor, 
-  getEmployeeTypeIcon, 
-  getEmployeeTypeName,
-  getEmployeeTypeColor,
-  getEmployeeRoleIcon,
-  getEmployeeFullName,
-  calculateContractualBalance,
-  calculateFixedBalance
-} from '@/lib/utils'
-import { EmployeeType, ContractualEmployee, FixedEmployee, Employee, EmployeeRole } from '@/types'
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog'
+import { ToastContainer, useToast } from '@/components/ui/toast'
+import { getEmployees, createEmployee, deleteEmployee, updateEmployee } from '@/lib/api'
+import { formatCurrency } from '@/lib/utils'
 import { 
   Plus, 
   Search, 
-  Filter, 
-  Users,
-  Clock,
-  DollarSign,
   X,
   Trash2,
-  Printer,
-  Download,
   UserPlus,
   Briefcase,
-  CreditCard,
-  Eye
+  Pencil,
+  AlertTriangle
 } from 'lucide-react'
 
 export default function EmployeesPage() {
   const router = useRouter()
+  const [employees, setEmployees] = useState<any[]>([])
+  const [loading, setLoading] = useState(true)
   const [searchTerm, setSearchTerm] = useState('')
-  const [filterType, setFilterType] = useState<EmployeeType | 'all'>('all')
-  const [filterRole, setFilterRole] = useState<EmployeeRole | 'all'>('all')
   const [showAddForm, setShowAddForm] = useState(false)
-  const [deleteDialog, setDeleteDialog] = useState<{ isOpen: boolean; employeeId: string; employeeName: string }>({
-    isOpen: false,
-    employeeId: '',
-    employeeName: ''
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
+  const [employeeToDelete, setEmployeeToDelete] = useState<string | null>(null)
+  const [editDialogOpen, setEditDialogOpen] = useState(false)
+  const [employeeToEdit, setEmployeeToEdit] = useState<any>(null)
+  const { toasts, toast, removeToast } = useToast()
+
+  const [addForm, setAddForm] = useState({
+    fullName: '',
+    phone: '',
+    role: ''
   })
 
-  // Filter employees based on search and filters
-  const filteredEmployees = mockEmployees.filter(employee => {
-    const matchesSearch = `${employee.firstName} ${employee.lastName}`.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         employee.phone.includes(searchTerm)
-    const matchesType = filterType === 'all' || employee.type === filterType
-    const matchesRole = filterRole === 'all' || employee.role === filterRole
-    
-    return matchesSearch && matchesType && matchesRole
+  const [editForm, setEditForm] = useState({
+    fullName: '',
+    phone: '',
+    role: ''
   })
 
-  const contractualEmployees = filteredEmployees.filter(emp => emp.type === 'contractual')
-  const fixedEmployees = filteredEmployees.filter(emp => emp.type === 'fixed')
+  useEffect(() => {
+    loadEmployees()
+  }, [])
 
-  const handleViewReport = (employee: Employee) => {
-    if (employee.type === 'contractual') {
-      router.push(`/employees/${employee.id}/report`)
-    } else {
-      router.push(`/employees/fixed/${employee.id}/report`)
+  async function loadEmployees() {
+    try {
+      setLoading(true)
+      const data = await getEmployees()
+      setEmployees(data || [])
+    } catch (error) {
+      console.error('Error loading employees:', error)
+      toast.error('Failed to load employees', error instanceof Error ? error.message : 'Unknown error')
+      setEmployees([])
+    } finally {
+      setLoading(false)
     }
   }
 
-  const handleDeleteEmployee = (employee: Employee) => {
-    setDeleteDialog({
-      isOpen: true,
-      employeeId: employee.id,
-      employeeName: getEmployeeFullName(employee)
-    })
+  // Filter only contractual employees
+  const contractualEmployees = employees.filter(emp => 
+    emp.type === 'contractual' && 
+    (searchTerm === '' || 
+     `${emp.first_name} ${emp.last_name}`.toLowerCase().includes(searchTerm.toLowerCase()) ||
+     emp.phone.includes(searchTerm))
+  )
+
+  // Calculate stats
+  const totalEmployees = contractualEmployees.length
+  const totalEarned = contractualEmployees.reduce((sum, emp) => sum + (emp.total_earned || 0), 0)
+  const totalPaid = contractualEmployees.reduce((sum, emp) => sum + (emp.advance_paid || 0), 0)
+  const totalBalance = contractualEmployees.reduce((sum, emp) => sum + (emp.balance || 0), 0)
+
+  async function handleAddEmployee() {
+    if (!addForm.fullName.trim() || !addForm.phone.trim() || !addForm.role.trim()) {
+      toast.warning('Missing Fields', 'Please fill in all required fields')
+      return
+    }
+
+    const nameParts = addForm.fullName.trim().split(' ')
+    const firstName = nameParts[0]
+    const lastName = nameParts.slice(1).join(' ') || firstName
+
+    try {
+      await createEmployee({
+        first_name: firstName,
+        last_name: lastName,
+        phone: addForm.phone,
+        role: addForm.role,
+        type: 'contractual',
+        status: 'active',
+        hire_date: new Date().toISOString().split('T')[0],
+        total_earned: 0,
+        advance_paid: 0,
+        balance: 0
+      })
+
+      toast.success('Employee Added', 'Temp employee has been added successfully')
+      await loadEmployees()
+      setShowAddForm(false)
+      setAddForm({ fullName: '', phone: '', role: '' })
+    } catch (error) {
+      console.error('Error adding employee:', error)
+      toast.error('Failed to add employee', error instanceof Error ? error.message : 'Unknown error')
+    }
   }
 
-  const confirmDeleteEmployee = () => {
-    // In a real app, this would make an API call to delete the employee
-    console.log(`Deleting employee with ID: ${deleteDialog.employeeId}`)
-    // For now, just close the dialog
-    setDeleteDialog({ isOpen: false, employeeId: '', employeeName: '' })
-    // You could also update the local state to remove the employee from the list
+  function handleEditEmployee(employee: any) {
+    setEmployeeToEdit(employee)
+    setEditForm({
+      fullName: `${employee.first_name} ${employee.last_name}`,
+      phone: employee.phone,
+      role: employee.role
+    })
+    setEditDialogOpen(true)
+  }
+
+  async function confirmEditEmployee() {
+    if (!employeeToEdit) return
+
+    if (!editForm.fullName.trim() || !editForm.phone.trim() || !editForm.role.trim()) {
+      toast.warning('Missing Fields', 'Please fill in all required fields')
+      return
+    }
+
+    const nameParts = editForm.fullName.trim().split(' ')
+    const firstName = nameParts[0]
+    const lastName = nameParts.slice(1).join(' ') || firstName
+
+    try {
+      await updateEmployee(employeeToEdit.id, {
+        first_name: firstName,
+        last_name: lastName,
+        phone: editForm.phone,
+        role: editForm.role
+      })
+
+      toast.success('Employee Updated', 'Employee details have been updated successfully')
+      await loadEmployees()
+      setEditDialogOpen(false)
+      setEmployeeToEdit(null)
+    } catch (error) {
+      console.error('Error updating employee:', error)
+      toast.error('Failed to update employee', error instanceof Error ? error.message : 'Unknown error')
+    }
+  }
+
+  function handleDeleteEmployee(id: string) {
+    setEmployeeToDelete(id)
+    setDeleteDialogOpen(true)
+  }
+
+  async function confirmDeleteEmployee() {
+    if (!employeeToDelete) return
+
+    try {
+      await deleteEmployee(employeeToDelete)
+      toast.success('Employee Deleted', 'The employee has been deleted successfully')
+      await loadEmployees()
+    } catch (error) {
+      console.error('Error deleting employee:', error)
+      toast.error('Failed to delete employee', error instanceof Error ? error.message : 'Unknown error')
+    } finally {
+      setDeleteDialogOpen(false)
+      setEmployeeToDelete(null)
+    }
   }
 
   return (
@@ -94,76 +178,74 @@ export default function EmployeesPage() {
         <div className="flex justify-between items-center">
           <div>
             <h1 className="text-3xl font-bold">Employees</h1>
-            <p className="text-muted-foreground">Manage your team members and their information</p>
+            <p className="text-muted-foreground">Manage your contractual employees</p>
           </div>
           <Button onClick={() => setShowAddForm(true)}>
             <UserPlus className="w-4 h-4 mr-2" />
-            Add Employee
+            Add Temp Employee
           </Button>
         </div>
 
-        {/* Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        {/* Stats Grid */}
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">Total Employees</CardTitle>
-              <Users className="h-4 w-4 text-muted-foreground" />
+              <UserPlus className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{mockEmployeeStats.totalEmployees}</div>
-              <p className="text-xs text-muted-foreground">
-                {mockEmployeeStats.activeEmployees} active, {mockEmployeeStats.inactiveEmployees} inactive
-              </p>
+              <div className="text-2xl font-bold">{totalEmployees}</div>
+              <p className="text-xs text-muted-foreground">Contractual employees</p>
             </CardContent>
           </Card>
 
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Contractual</CardTitle>
+              <CardTitle className="text-sm font-medium">Total Earned</CardTitle>
               <Briefcase className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{mockEmployeeStats.contractualEmployees}</div>
-              <p className="text-xs text-muted-foreground">
-                Avg: {formatCurrency(mockEmployeeStats.avgContractualEarning)}
-              </p>
+              <div className="text-2xl font-bold">{formatCurrency(totalEarned)}</div>
+              <p className="text-xs text-muted-foreground">All time earnings</p>
             </CardContent>
           </Card>
 
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Fixed Salary</CardTitle>
-              <CreditCard className="h-4 w-4 text-muted-foreground" />
+              <CardTitle className="text-sm font-medium">Total Paid</CardTitle>
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="h-4 w-4 text-muted-foreground">
+                <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
+              </svg>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{mockEmployeeStats.fixedEmployees}</div>
-              <p className="text-xs text-muted-foreground">
-                Avg: {formatCurrency(mockEmployeeStats.avgFixedSalary)}
-              </p>
+              <div className="text-2xl font-bold text-red-600">{formatCurrency(totalPaid)}</div>
+              <p className="text-xs text-muted-foreground">Advances paid</p>
             </CardContent>
           </Card>
 
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Total Advances</CardTitle>
-              <DollarSign className="h-4 w-4 text-muted-foreground" />
+              <CardTitle className="text-sm font-medium">Balance</CardTitle>
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="h-4 w-4 text-green-600">
+                <path d="M3 3v18h18" />
+                <path d="m19 9-5 5-4-4-3 3" />
+              </svg>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{formatCurrency(mockEmployeeStats.totalAdvancesPaid)}</div>
-              <p className="text-xs text-muted-foreground">Outstanding advances</p>
+              <div className="text-2xl font-bold text-green-600">{formatCurrency(totalBalance)}</div>
+              <p className="text-xs text-muted-foreground">Outstanding balance</p>
             </CardContent>
           </Card>
         </div>
 
-        {/* Search and Filters */}
+        {/* Search */}
         <Card>
           <CardHeader>
-            <CardTitle>Employee Directory</CardTitle>
-            <CardDescription>Search and filter your employees</CardDescription>
+            <CardTitle>Contractual Employees</CardTitle>
+            <CardDescription>Search and manage your temp employees</CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="flex flex-col sm:flex-row gap-4">
-              {/* Search */}
+            <div className="flex gap-4">
               <div className="relative flex-1">
                 <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
                 <input
@@ -174,46 +256,10 @@ export default function EmployeesPage() {
                   onChange={(e) => setSearchTerm(e.target.value)}
                 />
               </div>
-
-              {/* Type Filter */}
-              <select
-                className="px-3 py-2 border border-input rounded-md bg-background min-w-[140px]"
-                value={filterType}
-                onChange={(e) => setFilterType(e.target.value as EmployeeType | 'all')}
-              >
-                <option value="all">All Types</option>
-                <option value="contractual">Contractual</option>
-                <option value="fixed">Fixed Salary</option>
-              </select>
-
-              {/* Role Filter */}
-              <select
-                className="px-3 py-2 border border-input rounded-md bg-background min-w-[140px]"
-                value={filterRole}
-                onChange={(e) => setFilterRole(e.target.value as EmployeeRole | 'all')}
-              >
-                <option value="all">All Roles</option>
-                <option value="admin">Admin</option>
-                <option value="manager">Manager</option>
-                <option value="employee">Employee</option>
-                <option value="contractor">Contractor</option>
-                <option value="intern">Intern</option>
-                <option value="developer">Developer</option>
-                <option value="designer">Designer</option>
-                <option value="accountant">Accountant</option>
-                <option value="hr">HR</option>
-                <option value="sales">Sales</option>
-              </select>
-
-              {/* Clear Filters */}
-              {(searchTerm || filterType !== 'all' || filterRole !== 'all') && (
+              {searchTerm && (
                 <Button 
                   variant="outline" 
-                  onClick={() => {
-                    setSearchTerm('')
-                    setFilterType('all')
-                    setFilterRole('all')
-                  }}
+                  onClick={() => setSearchTerm('')}
                 >
                   <X className="w-4 h-4" />
                 </Button>
@@ -222,228 +268,84 @@ export default function EmployeesPage() {
           </CardContent>
         </Card>
 
-        {/* Employee Tables with Tabs */}
-        <Tabs defaultValue="contractual" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-2">
-            <TabsTrigger value="contractual" className="flex items-center gap-2">
-              <Briefcase className="w-4 h-4" />
-              Contractual ({contractualEmployees.length})
-            </TabsTrigger>
-            <TabsTrigger value="fixed" className="flex items-center gap-2">
-              <CreditCard className="w-4 h-4" />
-              Fixed Salary ({fixedEmployees.length})
-            </TabsTrigger>
-          </TabsList>
-
-          {/* Contractual Employees Tab */}
-          <TabsContent value="contractual">
-            {contractualEmployees.length > 0 ? (
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <Briefcase className="w-5 h-5" />
-                    Contractual Employees
-                  </CardTitle>
-                  <CardDescription>
-                    Employees working on hourly or project-based contracts
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="overflow-x-auto">
-                    <table className="w-full">
-                      <thead>
-                        <tr className="border-b">
-                          <th className="text-left p-2">Employee</th>
-                          <th className="text-left p-2">Contact</th>
-                          <th className="text-left p-2">Role</th>
-                          <th className="text-left p-2">Total Earned</th>
-                          <th className="text-left p-2">Advance Paid</th>
-                          <th className="text-left p-2">Balance</th>
-                          <th className="text-left p-2">Actions</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {contractualEmployees.map((employee) => (
-                          <tr key={employee.id} className="border-b hover:bg-muted/50">
-                            <td className="p-2">
-                              <div>
-                                <div 
-                                  className="font-medium text-blue-600 hover:text-blue-800 cursor-pointer"
-                                  onClick={() => handleViewReport(employee)}
-                                >
-                                  {getEmployeeFullName(employee)}
-                                </div>
-                                <div className="text-sm text-muted-foreground">
-                                  Hired: {formatDate(employee.hireDate)}
-                                </div>
-                              </div>
-                            </td>
-                            <td className="p-2 text-sm">{employee.phone}</td>
-                            <td className="p-2">
-                              <div className="flex items-center gap-2">
-                                {(() => {
-                                  const IconComponent = getEmployeeRoleIcon(employee.role)
-                                  return <IconComponent className="w-4 h-4" />
-                                })()}
-                                <span className="capitalize">{employee.role}</span>
-                              </div>
-                            </td>
-                            <td className="p-2 font-medium">{formatCurrency((employee as ContractualEmployee).totalEarned)}</td>
-                            <td className="p-2 text-red-600">{formatCurrency((employee as ContractualEmployee).advancePaid)}</td>
-                            <td className="p-2 font-medium text-green-600">{formatCurrency((employee as ContractualEmployee).balance)}</td>
-                            <td className="p-2">
-                              <div className="flex gap-1">
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  onClick={() => handleDeleteEmployee(employee)}
-                                >
-                                  <Trash2 className="w-4 h-4 text-red-500" />
-                                </Button>
-                              </div>
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                </CardContent>
-              </Card>
-            ) : (
-              <Card>
-                <CardContent className="text-center py-8">
-                  <Briefcase className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
-                  <h3 className="text-lg font-semibold mb-2">No contractual employees found</h3>
-                  <p className="text-muted-foreground mb-4">
-                    {searchTerm || filterType !== 'all' || filterRole !== 'all'
-                      ? 'Try adjusting your search or filters'
-                      : 'Get started by adding your first contractual employee'
-                    }
-                  </p>
-                  {!searchTerm && filterType === 'all' && filterRole === 'all' && (
-                    <Button onClick={() => setShowAddForm(true)}>
-                      <UserPlus className="w-4 h-4 mr-2" />
-                      Add Contractual Employee
-                    </Button>
-                  )}
-                </CardContent>
-              </Card>
-            )}
-          </TabsContent>
-
-          {/* Fixed Salary Employees Tab */}
-          <TabsContent value="fixed">
-            {fixedEmployees.length > 0 ? (
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <CreditCard className="w-5 h-5" />
-                    Fixed Salary Employees
-                  </CardTitle>
-                  <CardDescription>
-                    Employees with monthly fixed compensation
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="overflow-x-auto">
-                    <table className="w-full">
-                      <thead>
-                        <tr className="border-b">
-                          <th className="text-left p-2">Employee</th>
-                          <th className="text-left p-2">Contact</th>
-                          <th className="text-left p-2">Role</th>
-                          <th className="text-left p-2">Monthly Salary</th>
-                          <th className="text-left p-2">Paid Amount</th>
-                          <th className="text-left p-2">Balance</th>
-                          <th className="text-left p-2">Actions</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {fixedEmployees.map((employee) => (
-                          <tr key={employee.id} className="border-b hover:bg-muted/50">
-                            <td className="p-2">
-                              <div>
-                                <div 
-                                  className="font-medium text-blue-600 hover:text-blue-800 cursor-pointer"
-                                  onClick={() => handleViewReport(employee)}
-                                >
-                                  {getEmployeeFullName(employee)}
-                                </div>
-                                <div className="text-sm text-muted-foreground">
-                                  Hired: {formatDate(employee.hireDate)}
-                                </div>
-                              </div>
-                            </td>
-                            <td className="p-2 text-sm">{employee.phone}</td>
-                            <td className="p-2">
-                              <div className="flex items-center gap-2">
-                                {(() => {
-                                  const IconComponent = getEmployeeRoleIcon(employee.role)
-                                  return <IconComponent className="w-4 h-4" />
-                                })()}
-                                <span className="capitalize">{employee.role}</span>
-                              </div>
-                            </td>
-                            <td className="p-2 font-medium">{formatCurrency((employee as FixedEmployee).monthlySalary)}</td>
-                            <td className="p-2 text-green-600">{formatCurrency((employee as FixedEmployee).paidAmount)}</td>
-                            <td className="p-2 font-medium text-orange-600">{formatCurrency((employee as FixedEmployee).balance)}</td>
-                            <td className="p-2">
-                              <div className="flex gap-1">
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  onClick={() => handleDeleteEmployee(employee)}
-                                >
-                                  <Trash2 className="w-4 h-4 text-red-500" />
-                                </Button>
-                              </div>
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                </CardContent>
-              </Card>
-            ) : (
-              <Card>
-                <CardContent className="text-center py-8">
-                  <CreditCard className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
-                  <h3 className="text-lg font-semibold mb-2">No fixed salary employees found</h3>
-                  <p className="text-muted-foreground mb-4">
-                    {searchTerm || filterType !== 'all' || filterRole !== 'all'
-                      ? 'Try adjusting your search or filters'
-                      : 'Get started by adding your first fixed salary employee'
-                    }
-                  </p>
-                  {!searchTerm && filterType === 'all' && filterRole === 'all' && (
-                    <Button onClick={() => setShowAddForm(true)}>
-                      <UserPlus className="w-4 h-4 mr-2" />
-                      Add Fixed Salary Employee
-                    </Button>
-                  )}
-                </CardContent>
-              </Card>
-            )}
-          </TabsContent>
-        </Tabs>
-
-        {/* Show combined no results if both filtered lists are empty */}
-        {filteredEmployees.length === 0 && (
+        {/* Employees Table */}
+        {loading ? (
           <Card>
             <CardContent className="text-center py-8">
-              <Users className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
+              <p className="text-muted-foreground">Loading employees...</p>
+            </CardContent>
+          </Card>
+        ) : contractualEmployees.length > 0 ? (
+          <Card>
+            <CardContent className="pt-6">
+              <div className="overflow-x-auto">
+                <table className="w-full">
+                  <thead>
+                    <tr className="border-b">
+                      <th className="text-left p-2 font-medium">Name</th>
+                      <th className="text-left p-2 font-medium">Phone</th>
+                      <th className="text-left p-2 font-medium">Job Role</th>
+                      <th className="text-left p-2 font-medium">Total Earned</th>
+                      <th className="text-left p-2 font-medium">Total Paid</th>
+                      <th className="text-left p-2 font-medium">Balance</th>
+                      <th className="text-left p-2 font-medium">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {contractualEmployees.map((employee) => (
+                      <tr key={employee.id} className="border-b hover:bg-muted/50">
+                        <td className="p-2 font-medium">
+                          <button
+                            onClick={() => router.push(`/employees/${employee.id}`)}
+                            className="text-blue-600 hover:text-blue-800 hover:underline cursor-pointer"
+                          >
+                            {employee.first_name} {employee.last_name}
+                          </button>
+                        </td>
+                        <td className="p-2 text-sm">{employee.phone}</td>
+                        <td className="p-2 text-sm capitalize">{employee.role}</td>
+                        <td className="p-2 font-medium">{formatCurrency(employee.total_earned || 0)}</td>
+                        <td className="p-2 font-medium text-red-600">{formatCurrency(employee.advance_paid || 0)}</td>
+                        <td className="p-2 font-medium text-green-600">{formatCurrency(employee.balance || 0)}</td>
+                        <td className="p-2">
+                          <div className="flex items-center gap-1">
+                            <Button 
+                              variant="ghost" 
+                              size="sm"
+                              onClick={() => handleEditEmployee(employee)}
+                              className="h-8 w-8 p-0"
+                            >
+                              <Pencil className="h-4 w-4" />
+                            </Button>
+                            <Button 
+                              variant="ghost" 
+                              size="sm"
+                              onClick={() => handleDeleteEmployee(employee.id)}
+                              className="h-8 w-8 p-0 text-destructive hover:text-destructive hover:bg-destructive/10"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </CardContent>
+          </Card>
+        ) : (
+          <Card>
+            <CardContent className="text-center py-8">
+              <Briefcase className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
               <h3 className="text-lg font-semibold mb-2">No employees found</h3>
               <p className="text-muted-foreground mb-4">
-                {searchTerm || filterType !== 'all' || filterRole !== 'all'
-                  ? 'Try adjusting your search or filters'
-                  : 'Get started by adding your first employee'
-                }
+                {searchTerm ? 'Try adjusting your search' : 'Get started by adding your first temp employee'}
               </p>
-              {!searchTerm && filterType === 'all' && filterRole === 'all' && (
+              {!searchTerm && (
                 <Button onClick={() => setShowAddForm(true)}>
                   <UserPlus className="w-4 h-4 mr-2" />
-                  Add Employee
+                  Add Temp Employee
                 </Button>
               )}
             </CardContent>
@@ -451,15 +353,159 @@ export default function EmployeesPage() {
         )}
       </div>
 
+      {/* Add Employee Dialog */}
+      <Dialog open={showAddForm} onOpenChange={setShowAddForm}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>👤 Add New Employee</DialogTitle>
+            <DialogDescription>
+              Add a new contractual (temp) employee
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Full Name *</label>
+              <input
+                type="text"
+                value={addForm.fullName}
+                onChange={(e) => setAddForm({ ...addForm, fullName: e.target.value })}
+                className="w-full px-3 py-2 border border-input rounded-md"
+                placeholder="Enter employee name"
+                required
+              />
+            </div>
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Phone *</label>
+              <input
+                type="text"
+                value={addForm.phone}
+                onChange={(e) => setAddForm({ ...addForm, phone: e.target.value })}
+                className="w-full px-3 py-2 border border-input rounded-md"
+                placeholder="Enter phone number"
+                required
+              />
+            </div>
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Job Role *</label>
+              <input
+                type="text"
+                value={addForm.role}
+                onChange={(e) => setAddForm({ ...addForm, role: e.target.value })}
+                className="w-full px-3 py-2 border border-input rounded-md"
+                placeholder="Enter job role"
+                required
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => {
+                setShowAddForm(false)
+                setAddForm({ fullName: '', phone: '', role: '' })
+              }}
+            >
+              Cancel
+            </Button>
+            <Button onClick={handleAddEmployee}>
+              Add Employee
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit Employee Dialog */}
+      <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Edit Employee</DialogTitle>
+            <DialogDescription>
+              Update employee information
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Full Name *</label>
+              <input
+                type="text"
+                value={editForm.fullName}
+                onChange={(e) => setEditForm({ ...editForm, fullName: e.target.value })}
+                className="w-full px-3 py-2 border border-input rounded-md"
+                required
+              />
+            </div>
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Phone *</label>
+              <input
+                type="text"
+                value={editForm.phone}
+                onChange={(e) => setEditForm({ ...editForm, phone: e.target.value })}
+                className="w-full px-3 py-2 border border-input rounded-md"
+                required
+              />
+            </div>
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Job Role *</label>
+              <input
+                type="text"
+                value={editForm.role}
+                onChange={(e) => setEditForm({ ...editForm, role: e.target.value })}
+                className="w-full px-3 py-2 border border-input rounded-md"
+                required
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => {
+                setEditDialogOpen(false)
+                setEmployeeToEdit(null)
+              }}
+            >
+              Cancel
+            </Button>
+            <Button onClick={confirmEditEmployee}>
+              Save Changes
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
       {/* Delete Confirmation Dialog */}
-      <ConfirmationDialog
-        isOpen={deleteDialog.isOpen}
-        onClose={() => setDeleteDialog({ isOpen: false, employeeId: '', employeeName: '' })}
-        onConfirm={confirmDeleteEmployee}
-        title="Delete Employee"
-        description={`Are you sure you want to delete ${deleteDialog.employeeName}? This action cannot be undone and will remove all associated work records and payments.`}
-        confirmText="Delete"
-      />
+      <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <AlertTriangle className="h-5 w-5 text-destructive" />
+              Delete Employee
+            </DialogTitle>
+            <DialogDescription>
+              Are you sure you want to delete this employee? This action cannot be undone.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => {
+                setDeleteDialogOpen(false)
+                setEmployeeToDelete(null)
+              }}
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={confirmDeleteEmployee}
+            >
+              Delete
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Toast Notifications */}
+      <ToastContainer toasts={toasts} onRemove={removeToast} />
     </DashboardLayout>
   )
 }

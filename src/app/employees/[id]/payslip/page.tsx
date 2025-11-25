@@ -10,13 +10,15 @@ import {
   getWorkRecordsByEmployee, 
   getSalaryPaymentsByEmployee 
 } from '@/lib/api'
-import { formatCurrency, formatDate } from '@/lib/utils'
+import { formatCurrency } from '@/lib/utils'
+import { useDateFormat } from '@/hooks/useDateFormat'
 import { ArrowLeft, Printer } from 'lucide-react'
 
 export default function EmployeePayslipPage() {
   const params = useParams()
   const router = useRouter()
   const employeeId = params.id as string
+  const { formatDate } = useDateFormat()
 
   const [employee, setEmployee] = useState<any>(null)
   const [workRecords, setWorkRecords] = useState<any[]>([])

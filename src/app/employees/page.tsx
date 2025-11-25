@@ -100,7 +100,8 @@ export default function EmployeesPage() {
   // Calculate stats
   const totalEmployees = contractualEmployees.length
   const tempPaidSalary = contractualEmployees.reduce((sum, emp) => sum + (emp.advance_paid || 0), 0)
-  const dueSalaryTotal = contractualEmployees.reduce((sum, emp) => sum + (emp.balance || 0), 0)
+  const dueSalaryTotal = contractualEmployees.reduce((sum, emp) => sum + (emp.balance > 0 ? emp.balance : 0), 0)
+  const totalAdvancePaid = contractualEmployees.reduce((sum, emp) => sum + (emp.balance < 0 ? Math.abs(emp.balance) : 0), 0)
 
   async function handleAddEmployee() {
     if (!addForm.fullName.trim() || !addForm.phone.trim() || !addForm.role.trim()) {
@@ -213,7 +214,7 @@ export default function EmployeesPage() {
         </div>
 
         {/* Stats Grid */}
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">Total Employees</CardTitle>
@@ -249,6 +250,19 @@ export default function EmployeesPage() {
             <CardContent>
               <div className="text-2xl font-bold text-orange-600">{formatCurrency(dueSalaryTotal)}</div>
               <p className="text-xs text-muted-foreground">Outstanding balance</p>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Total Advance Paid</CardTitle>
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="h-4 w-4 text-red-600">
+                <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
+              </svg>
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-red-600">{formatCurrency(totalAdvancePaid)}</div>
+              <p className="text-xs text-muted-foreground">Overpaid salaries</p>
             </CardContent>
           </Card>
         </div>
@@ -321,7 +335,9 @@ export default function EmployeesPage() {
                         <td className="p-2 text-sm capitalize">{employee.role}</td>
                         <td className="p-2 font-medium">{formatCurrency(employee.total_earned || 0)}</td>
                         <td className="p-2 font-medium text-red-600">{formatCurrency(employee.advance_paid || 0)}</td>
-                        <td className="p-2 font-medium text-green-600">{formatCurrency(employee.balance || 0)}</td>
+                        <td className={`p-2 font-medium ${(employee.balance || 0) < 0 ? 'text-red-600' : 'text-green-600'}`}>
+                          {formatCurrency(employee.balance || 0)}
+                        </td>
                         <td className="p-2">
                           <div className="flex items-center gap-1">
                             <Button 

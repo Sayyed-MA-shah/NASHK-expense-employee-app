@@ -16,7 +16,8 @@ import {
   deleteWorkRecord,
   deleteSalaryPayment
 } from '@/lib/api'
-import { formatCurrency, formatDate } from '@/lib/utils'
+import { formatCurrency } from '@/lib/utils'
+import { useDateFormat } from '@/hooks/useDateFormat'
 import { 
   ArrowLeft,
   Printer,
@@ -36,6 +37,7 @@ export default function EmployeeReportPage() {
   const router = useRouter()
   const employeeId = params.id as string
   const { toasts, toast, removeToast } = useToast()
+  const { formatDate } = useDateFormat()
 
   const [employee, setEmployee] = useState<any>(null)
   const [workRecords, setWorkRecords] = useState<any[]>([])

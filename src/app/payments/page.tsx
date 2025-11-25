@@ -8,8 +8,9 @@ import { Input } from '@/components/ui/input'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { getPayments, createPayment, deletePayment } from '@/lib/api'
-import { formatDate, generateId } from '@/lib/utils'
+import { generateId } from '@/lib/utils'
 import { useCurrencyFormat } from '@/hooks/useCurrencyFormat'
+import { useDateFormat } from '@/hooks/useDateFormat'
 import { TrendingUp, TrendingDown, Wallet, Calendar, Plus, X, Trash2, Trash, FileDown } from 'lucide-react'
 import jsPDF from 'jspdf'
 import autoTable from 'jspdf-autotable'
@@ -24,6 +25,7 @@ interface PaymentRow {
 
 export default function PaymentsPage() {
   const { formatCurrency, currency } = useCurrencyFormat()
+  const { formatDate } = useDateFormat()
   const [activeTab, setActiveTab] = useState<'payin' | 'payout'>('payin')
   const [fromDate, setFromDate] = useState('')
   const [toDate, setToDate] = useState('')
@@ -250,10 +252,10 @@ export default function PaymentsPage() {
     doc.setFont('helvetica', 'normal')
     doc.setTextColor(100, 100, 100)
     const dateRangeText = fromDate && toDate 
-      ? `Period: ${new Date(fromDate).toLocaleDateString()} - ${new Date(toDate).toLocaleDateString()}`
+      ? `Period: ${formatDate(new Date(fromDate))} - ${formatDate(new Date(toDate))}`
       : fromDate 
-      ? `From: ${new Date(fromDate).toLocaleDateString()}`
-      : `Until: ${new Date(toDate).toLocaleDateString()}`
+      ? `From: ${formatDate(new Date(fromDate))}`
+      : `Until: ${formatDate(new Date(toDate))}`
     doc.text(dateRangeText, pageWidth / 2, 57, { align: 'center' })
     
     doc.setTextColor(0, 0, 0)
@@ -293,7 +295,7 @@ export default function PaymentsPage() {
     // Transactions Table
     const tableData = filteredPayments.map(payment => [
       payment.reference,
-      new Date(payment.created_at).toLocaleDateString(),
+      formatDate(new Date(payment.created_at)),
       payment.description,
       formatCurrency(payment.amount),
       payment.type === 'credit' ? 'Payin' : 'Payout'
@@ -498,9 +500,9 @@ export default function PaymentsPage() {
                 {filteredPayments.length} {activeTab} transaction{filteredPayments.length !== 1 ? 's' : ''}
                 {(fromDate || toDate) && (
                   <span>
-                    {fromDate && toDate ? ` from ${new Date(fromDate).toLocaleDateString()} to ${new Date(toDate).toLocaleDateString()}` : 
-                     fromDate ? ` from ${new Date(fromDate).toLocaleDateString()}` : 
-                     ` until ${new Date(toDate).toLocaleDateString()}`}
+                    {fromDate && toDate ? ` from ${formatDate(new Date(fromDate))} to ${formatDate(new Date(toDate))}` : 
+                     fromDate ? ` from ${formatDate(new Date(fromDate))}` : 
+                     ` until ${formatDate(new Date(toDate))}`}
                   </span>
                 )}
               </CardDescription>

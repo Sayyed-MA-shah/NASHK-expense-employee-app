@@ -11,13 +11,13 @@ import jsPDF from 'jspdf'
 import autoTable from 'jspdf-autotable'
 import { 
   formatCurrency, 
-  formatDate, 
   getStatusColor, 
   getExpenseCategoryIcon, 
   getExpenseCategoryName,
   getExpenseCategoryColor,
   generateId
 } from '@/lib/utils'
+import { useDateFormat } from '@/hooks/useDateFormat'
 import { ExpenseCategory } from '@/types'
 import { 
   Plus, 
@@ -41,6 +41,7 @@ interface ExpenseRow {
 }
 
 export default function ExpensesPage() {
+  const { formatDate } = useDateFormat()
   const [activeTab, setActiveTab] = useState<ExpenseCategory | 'all'>('all')
   const [dateRange, setDateRange] = useState({ start: '', end: '' })
   const [showAddForm, setShowAddForm] = useState(false)
@@ -289,10 +290,10 @@ export default function ExpensesPage() {
     doc.setFont('helvetica', 'normal')
     doc.setTextColor(100, 100, 100)
     const dateRangeText = dateRange.start && dateRange.end 
-      ? `Period: ${new Date(dateRange.start).toLocaleDateString()} - ${new Date(dateRange.end).toLocaleDateString()}`
+      ? `Period: ${formatDate(new Date(dateRange.start))} - ${formatDate(new Date(dateRange.end))}`
       : dateRange.start 
-      ? `From: ${new Date(dateRange.start).toLocaleDateString()}`
-      : `Until: ${new Date(dateRange.end).toLocaleDateString()}`
+      ? `From: ${formatDate(new Date(dateRange.start))}`
+      : `Until: ${formatDate(new Date(dateRange.end))}`
     doc.text(dateRangeText, pageWidth / 2, 57, { align: 'center' })
     
     doc.setTextColor(0, 0, 0)

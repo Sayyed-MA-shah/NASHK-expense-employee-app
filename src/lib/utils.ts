@@ -153,22 +153,51 @@ export function getCurrencySymbol(currency: string): string {
 
 export function formatDate(
   date: Date | string,
-  format: 'short' | 'medium' | 'long' | 'relative' = 'medium',
+  formatPattern?: 'short' | 'medium' | 'long' | 'relative' | string,
   locale: string = 'en-US'
 ): string {
   const dateObj = typeof date === 'string' ? new Date(date) : date
 
-  if (format === 'relative') {
+  if (formatPattern === 'relative') {
     return formatRelativeTime(dateObj)
   }
 
+  // If a custom format pattern is provided (like 'dd/MM/yyyy' or 'MM/dd/yyyy')
+  if (formatPattern && !['short', 'medium', 'long'].includes(formatPattern)) {
+    return formatDateWithPattern(dateObj, formatPattern)
+  }
+
+  // Default preset formats
   const options: any = {
     short: { month: 'short', day: 'numeric', year: 'numeric' },
     medium: { month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' },
     long: { month: 'long', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit', second: '2-digit' }
-  }[format]
+  }[formatPattern || 'medium']
 
   return new Intl.DateTimeFormat(locale, options).format(dateObj)
+}
+
+function formatDateWithPattern(date: Date, pattern: string): string {
+  const day = date.getDate()
+  const month = date.getMonth() + 1
+  const year = date.getFullYear()
+  const hours = date.getHours()
+  const minutes = date.getMinutes()
+  const seconds = date.getSeconds()
+
+  const pad = (num: number, size: number = 2) => String(num).padStart(size, '0')
+
+  return pattern
+    .replace('yyyy', String(year))
+    .replace('yy', String(year).slice(-2))
+    .replace('MM', pad(month))
+    .replace('M', String(month))
+    .replace('dd', pad(day))
+    .replace('d', String(day))
+    .replace('HH', pad(hours))
+    .replace('hh', pad(hours > 12 ? hours - 12 : hours))
+    .replace('mm', pad(minutes))
+    .replace('ss', pad(seconds))
 }
 
 export function formatRelativeTime(date: Date): string {

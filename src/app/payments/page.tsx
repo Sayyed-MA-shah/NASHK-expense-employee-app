@@ -84,12 +84,12 @@ export default function PaymentsPage() {
     return matchesType && matchesDateRange
   })
 
-  // Calculate KPI values
-  const totalPayin = payments
+  // Calculate KPI values from filtered data
+  const totalPayin = filteredPayments
     .filter(p => p.type === 'credit')
     .reduce((sum, p) => sum + p.amount, 0)
   
-  const totalPayout = payments
+  const totalPayout = filteredPayments
     .filter(p => p.type === 'debit')
     .reduce((sum, p) => sum + p.amount, 0)
   

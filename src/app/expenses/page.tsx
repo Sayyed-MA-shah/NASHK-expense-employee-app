@@ -169,15 +169,15 @@ export default function ExpensesPage() {
     return matchesCategory && matchesDateRange
   })
 
-  // Calculate category totals
+  // Calculate category totals from filtered data
   const categoryTotals = categories.reduce((acc, category) => {
-    acc[category] = expenses
+    acc[category] = filteredExpenses
       .filter(expense => expense.category === category)
       .reduce((sum, expense) => sum + expense.amount, 0)
     return acc
   }, {} as Record<ExpenseCategory, number>)
 
-  const totalExpenses = expenses.reduce((sum, expense) => sum + expense.amount, 0)
+  const totalExpenses = filteredExpenses.reduce((sum, expense) => sum + expense.amount, 0)
 
   // Add expense form functions
   const addExpenseRow = () => {

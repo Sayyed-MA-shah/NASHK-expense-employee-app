@@ -296,7 +296,7 @@ export default function EmployeeReportPage() {
               <h1 className="text-3xl font-bold">📄 Employee Report</h1>
             </div>
             <p className="text-muted-foreground ml-10">
-              {employee.first_name} {employee.last_name} - {formatDate(startDate)} to {formatDate(endDate)}
+              {employee.first_name}{employee.last_name ? ` ${employee.last_name}` : ''} - {formatDate(startDate)} to {formatDate(endDate)}
             </p>
           </div>
         </div>
@@ -305,7 +305,7 @@ export default function EmployeeReportPage() {
         <div className="print-only mb-6">
           <h1 className="text-3xl font-bold mb-2">📄 Employee Report</h1>
           <p className="text-gray-600">
-            {employee.first_name} {employee.last_name} - {formatDate(startDate)} to {formatDate(endDate)}
+            {employee.first_name}{employee.last_name ? ` ${employee.last_name}` : ''} - {formatDate(startDate)} to {formatDate(endDate)}
           </p>
         </div>
 
@@ -531,7 +531,7 @@ export default function EmployeeReportPage() {
           <DialogHeader>
             <DialogTitle>🛠️ Add Work Records</DialogTitle>
             <DialogDescription>
-              Record work completed by {employee.first_name}
+              Record work completed by {employee.first_name}{employee.last_name ? ` ${employee.last_name}` : ''}
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-4">
@@ -671,7 +671,7 @@ export default function EmployeeReportPage() {
           <DialogHeader>
             <DialogTitle>💷 Add Salary Payment</DialogTitle>
             <DialogDescription>
-              Record salary payment to {employee.first_name}
+              Record salary payment to {employee.first_name}{employee.last_name ? ` ${employee.last_name}` : ''}
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-4">

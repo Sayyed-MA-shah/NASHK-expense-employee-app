@@ -111,7 +111,7 @@ export default function EmployeesPage() {
 
     const nameParts = addForm.fullName.trim().split(' ')
     const firstName = nameParts[0]
-    const lastName = nameParts.slice(1).join(' ') || firstName
+    const lastName = nameParts.slice(1).join(' ') || ''
 
     try {
       await createEmployee({
@@ -157,7 +157,7 @@ export default function EmployeesPage() {
 
     const nameParts = editForm.fullName.trim().split(' ')
     const firstName = nameParts[0]
-    const lastName = nameParts.slice(1).join(' ') || firstName
+    const lastName = nameParts.slice(1).join(' ') || ''
 
     try {
       await updateEmployee(employeeToEdit.id, {
@@ -328,7 +328,7 @@ export default function EmployeesPage() {
                             onClick={() => router.push(`/employees/${employee.id}`)}
                             className="text-blue-600 hover:text-blue-800 hover:underline cursor-pointer"
                           >
-                            {employee.first_name} {employee.last_name}
+                            {employee.first_name}{employee.last_name ? ` ${employee.last_name}` : ''}
                           </button>
                         </td>
                         <td className="p-2 text-sm">{employee.phone}</td>

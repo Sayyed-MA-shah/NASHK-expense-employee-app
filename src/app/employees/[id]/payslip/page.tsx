@@ -129,7 +129,7 @@ export default function EmployeePayslipPage() {
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
               <div className="bg-muted/50 p-4 rounded-lg">
                 <p className="text-sm text-muted-foreground mb-1">Employee Name</p>
-                <p className="text-lg font-semibold">{employee.first_name} {employee.last_name}</p>
+                <p className="text-lg font-semibold">{employee.first_name}{employee.last_name ? ` ${employee.last_name}` : ''}</p>
               </div>
               <div className="bg-muted/50 p-4 rounded-lg">
                 <p className="text-sm text-muted-foreground mb-1">Role</p>

@@ -62,10 +62,8 @@ export default function PaymentsPage() {
     }
   }
 
-  // Filter payments based on type and date range
-  const filteredPayments = payments.filter(payment => {
-    const matchesType = activeTab === 'payin' ? payment.type === 'credit' : payment.type === 'debit'
-    
+  // Filter payments by date range only (for KPI calculations)
+  const dateFilteredPayments = payments.filter(payment => {
     const paymentDate = new Date(payment.created_at)
     let matchesDateRange = true
     
@@ -81,15 +79,21 @@ export default function PaymentsPage() {
       matchesDateRange = matchesDateRange && paymentDate <= to
     }
     
-    return matchesType && matchesDateRange
+    return matchesDateRange
   })
 
-  // Calculate KPI values from filtered data
-  const totalPayin = filteredPayments
+  // Filter payments by type AND date range (for table display)
+  const filteredPayments = dateFilteredPayments.filter(payment => {
+    const matchesType = activeTab === 'payin' ? payment.type === 'credit' : payment.type === 'debit'
+    return matchesType
+  })
+
+  // Calculate KPI values from date-filtered data (not type-filtered)
+  const totalPayin = dateFilteredPayments
     .filter(p => p.type === 'credit')
     .reduce((sum, p) => sum + p.amount, 0)
   
-  const totalPayout = filteredPayments
+  const totalPayout = dateFilteredPayments
     .filter(p => p.type === 'debit')
     .reduce((sum, p) => sum + p.amount, 0)
   

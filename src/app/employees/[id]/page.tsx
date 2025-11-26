@@ -252,7 +252,266 @@ export default function EmployeeReportPage() {
   }
 
   function handlePrint() {
-    window.print()
+    const printWindow = window.open('', '_blank')
+    if (!printWindow) return
+
+    const reportHTML = `
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <meta charset="utf-8">
+          <title>Employee Report - ${employee.first_name}${employee.last_name ? ` ${employee.last_name}` : ''}</title>
+          <style>
+            * {
+              margin: 0;
+              padding: 0;
+              box-sizing: border-box;
+            }
+            body {
+              font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+              padding: 20px;
+              background: white;
+            }
+            .report {
+              max-width: 1000px;
+              margin: 0 auto;
+            }
+            .header {
+              border-bottom: 3px solid #2563eb;
+              padding-bottom: 20px;
+              margin-bottom: 24px;
+            }
+            .header h1 {
+              font-size: 28px;
+              font-weight: bold;
+              color: #1f2937;
+              margin-bottom: 8px;
+            }
+            .header .subtitle {
+              font-size: 16px;
+              color: #6b7280;
+            }
+            .period {
+              background: #f3f4f6;
+              padding: 16px;
+              border-radius: 8px;
+              margin-bottom: 24px;
+              font-size: 14px;
+              color: #374151;
+            }
+            .summary-cards {
+              display: grid;
+              grid-template-columns: repeat(3, 1fr);
+              gap: 16px;
+              margin-bottom: 24px;
+            }
+            .card {
+              background: white;
+              border: 1px solid #e5e7eb;
+              border-radius: 8px;
+              padding: 16px;
+            }
+            .card-title {
+              font-size: 12px;
+              color: #6b7280;
+              text-transform: uppercase;
+              margin-bottom: 8px;
+            }
+            .card-value {
+              font-size: 24px;
+              font-weight: bold;
+              margin-bottom: 4px;
+            }
+            .card-value.green { color: #16a34a; }
+            .card-value.blue { color: #2563eb; }
+            .card-value.red { color: #dc2626; }
+            .card-subtitle {
+              font-size: 11px;
+              color: #6b7280;
+            }
+            .section {
+              margin-bottom: 32px;
+              page-break-inside: avoid;
+            }
+            .section-title {
+              font-size: 16px;
+              font-weight: bold;
+              color: #1f2937;
+              margin-bottom: 12px;
+              padding-bottom: 8px;
+              border-bottom: 2px solid #e5e7eb;
+            }
+            table {
+              width: 100%;
+              border-collapse: collapse;
+              margin-bottom: 16px;
+              background: white;
+              border: 1px solid #e5e7eb;
+            }
+            thead {
+              background: #f9fafb;
+            }
+            th {
+              padding: 10px;
+              text-align: left;
+              font-size: 11px;
+              font-weight: 600;
+              color: #6b7280;
+              text-transform: uppercase;
+              border-bottom: 1px solid #e5e7eb;
+            }
+            th.center { text-align: center; }
+            th.right { text-align: right; }
+            td {
+              padding: 10px;
+              font-size: 13px;
+              color: #374151;
+              border-bottom: 1px solid #f3f4f6;
+            }
+            td.center { text-align: center; }
+            td.right { text-align: right; }
+            tbody tr:hover {
+              background: #f9fafb;
+            }
+            tfoot {
+              background: #f3f4f6;
+              font-weight: bold;
+            }
+            tfoot td {
+              padding: 12px 10px;
+              border-top: 2px solid #e5e7eb;
+            }
+            .no-data {
+              text-align: center;
+              padding: 32px;
+              color: #9ca3af;
+              font-style: italic;
+            }
+            .footer {
+              margin-top: 32px;
+              padding-top: 16px;
+              border-top: 1px solid #e5e7eb;
+              text-align: center;
+              font-size: 12px;
+              color: #6b7280;
+            }
+            @media print {
+              body { padding: 20px; }
+              .section { page-break-inside: avoid; }
+            }
+          </style>
+        </head>
+        <body>
+          <div class="report">
+            <div class="header">
+              <h1>📄 Employee Report</h1>
+              <div class="subtitle">${employee.first_name}${employee.last_name ? ` ${employee.last_name}` : ''} - ${employee.phone || 'N/A'}</div>
+            </div>
+
+            <div class="period">
+              <strong>Report Period:</strong> ${formatDate(startDate)} to ${formatDate(endDate)}
+            </div>
+
+            <div class="summary-cards">
+              <div class="card">
+                <div class="card-title">Total Earned</div>
+                <div class="card-value green">${formatCurrency(totalWork)}</div>
+                <div class="card-subtitle">${filteredWorkRecords.length} work records</div>
+              </div>
+              <div class="card">
+                <div class="card-title">Salary Paid</div>
+                <div class="card-value blue">${formatCurrency(totalSalary)}</div>
+                <div class="card-subtitle">${filteredSalaryPayments.length} payments</div>
+              </div>
+              <div class="card">
+                <div class="card-title">Balance</div>
+                <div class="card-value ${balance < 0 ? 'red' : 'green'}">${formatCurrency(balance)}</div>
+                <div class="card-subtitle">${balance < 0 ? 'Overpaid' : 'Outstanding'}</div>
+              </div>
+            </div>
+
+            <div class="section">
+              <div class="section-title">⏱️ Work Records</div>
+              <table>
+                <thead>
+                  <tr>
+                    <th>Date</th>
+                    <th>Description</th>
+                    <th class="center">Quantity</th>
+                    <th class="right">Price</th>
+                    <th class="right">Amount</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  ${filteredWorkRecords.length > 0 ? filteredWorkRecords.map(record => `
+                    <tr>
+                      <td>${formatDate(record.date)}</td>
+                      <td>${record.description}</td>
+                      <td class="center">${record.quantity}</td>
+                      <td class="right">${formatCurrency(record.price)}</td>
+                      <td class="right">${formatCurrency(record.quantity * record.price)}</td>
+                    </tr>
+                  `).join('') : '<tr><td colspan="5" class="no-data">No work records found</td></tr>'}
+                </tbody>
+                <tfoot>
+                  <tr>
+                    <td colspan="4" class="right">Total Earned:</td>
+                    <td class="right">${formatCurrency(totalWork)}</td>
+                  </tr>
+                </tfoot>
+              </table>
+            </div>
+
+            <div class="section">
+              <div class="section-title">💰 Salary Payments</div>
+              <table>
+                <thead>
+                  <tr>
+                    <th>Date</th>
+                    <th>Description</th>
+                    <th class="right">Amount</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  ${filteredSalaryPayments.length > 0 ? filteredSalaryPayments.map(payment => `
+                    <tr>
+                      <td>${formatDate(payment.payment_date)}</td>
+                      <td>${payment.notes || 'Salary Payment'}</td>
+                      <td class="right">${formatCurrency(payment.amount)}</td>
+                    </tr>
+                  `).join('') : '<tr><td colspan="3" class="no-data">No salary payments found</td></tr>'}
+                </tbody>
+                <tfoot>
+                  <tr>
+                    <td colspan="2" class="right">Total Paid:</td>
+                    <td class="right">${formatCurrency(totalSalary)}</td>
+                  </tr>
+                  <tr>
+                    <td colspan="2" class="right">Balance (Earned − Paid):</td>
+                    <td class="right">${formatCurrency(balance)}</td>
+                  </tr>
+                </tfoot>
+              </table>
+            </div>
+
+            <div class="footer">
+              Generated on ${formatDate(new Date().toISOString())} | Employee Report
+            </div>
+          </div>
+          <script>
+            window.onload = function() {
+              window.print();
+              window.onafterprint = function() {
+                window.close();
+              }
+            }
+          </script>
+        </body>
+      </html>
+    `
+
+    printWindow.document.write(reportHTML)
+    printWindow.document.close()
   }
 
   if (loading) {

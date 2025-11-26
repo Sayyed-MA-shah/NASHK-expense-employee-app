@@ -131,14 +131,23 @@ export default function FixedEmployeeReportPage() {
   const balance = totalSalary - totalPaid
 
   async function handleAddOvertime() {
-    if (!overtimeForm.description || !overtimeForm.hours || !overtimeForm.rate) {
-      toast.warning('Missing Fields', 'Please fill in all required fields')
+    if (!overtimeForm.description) {
+      toast.warning('Missing Fields', 'Please enter a description')
       return
     }
 
-    const hours = parseFloat(overtimeForm.hours)
-    const rate = parseFloat(overtimeForm.rate)
-    const calculatedAmount = hours * rate
+    // Check if we have either (hours + rate) or direct amount
+    const hasHoursAndRate = overtimeForm.hours && overtimeForm.rate
+    const hasDirectAmount = overtimeForm.amount && !overtimeForm.hours
+
+    if (!hasHoursAndRate && !hasDirectAmount) {
+      toast.warning('Missing Fields', 'Please enter either (Hours + Rate) or Amount directly')
+      return
+    }
+
+    const hours = overtimeForm.hours ? parseFloat(overtimeForm.hours) : 0
+    const rate = overtimeForm.rate ? parseFloat(overtimeForm.rate) : 0
+    const finalAmount = hasHoursAndRate ? (hours * rate) : parseFloat(overtimeForm.amount)
 
     try {
       await createOvertimeRecord({
@@ -147,8 +156,8 @@ export default function FixedEmployeeReportPage() {
         description: overtimeForm.description,
         hours: hours,
         rate: rate,
-        amount: calculatedAmount,
-        total: calculatedAmount
+        amount: finalAmount,
+        total: finalAmount
       })
 
       toast.success('Overtime Added', 'Overtime record has been added successfully')
@@ -237,14 +246,15 @@ export default function FixedEmployeeReportPage() {
     }
   }
 
-  // Calculate overtime amount when hours or rate changes
+  // Calculate overtime amount when hours or rate changes (only if not manually entering amount)
   useEffect(() => {
     if (overtimeForm.hours && overtimeForm.rate) {
       const hours = parseFloat(overtimeForm.hours) || 0
       const rate = parseFloat(overtimeForm.rate) || 0
       setOvertimeForm(prev => ({ ...prev, amount: (hours * rate).toFixed(2) }))
-    } else {
-      setOvertimeForm(prev => ({ ...prev, amount: '' }))
+    } else if (!overtimeForm.hours && !overtimeForm.rate) {
+      // Only clear amount if both hours and rate are empty (user might be entering direct amount)
+      // Do nothing to preserve manually entered amount
     }
   }, [overtimeForm.hours, overtimeForm.rate])
 
@@ -1171,7 +1181,7 @@ export default function FixedEmployeeReportPage() {
                 />
               </div>
               <div className="space-y-2">
-                <label className="block text-sm text-muted-foreground">Hours</label>
+                <label className="block text-sm text-muted-foreground">Hours (optional)</label>
                 <input
                   type="number"
                   step="0.5"
@@ -1179,11 +1189,11 @@ export default function FixedEmployeeReportPage() {
                   onChange={(e) => setOvertimeForm({ ...overtimeForm, hours: e.target.value })}
                   className="w-full px-3 py-2 border border-input rounded-lg focus:ring-2 focus:ring-ring"
                   placeholder="0"
-                  required
                 />
+                <p className="text-xs text-muted-foreground mt-1">Leave blank to enter amount directly</p>
               </div>
               <div className="space-y-2">
-                <label className="block text-sm text-muted-foreground">Rate</label>
+                <label className="block text-sm text-muted-foreground">Rate (optional)</label>
                 <input
                   type="number"
                   step="0.01"
@@ -1191,19 +1201,20 @@ export default function FixedEmployeeReportPage() {
                   onChange={(e) => setOvertimeForm({ ...overtimeForm, rate: e.target.value })}
                   className="w-full px-3 py-2 border border-input rounded-lg focus:ring-2 focus:ring-ring"
                   placeholder="0.00"
-                  required
                 />
+                <p className="text-xs text-muted-foreground mt-1">Required only if Hours is provided</p>
               </div>
               <div className="space-y-2">
-                <label className="block text-sm text-muted-foreground">Amount (optional)</label>
+                <label className="block text-sm text-muted-foreground">Amount</label>
                 <input
-                  type="text"
-                  value={overtimeForm.amount ? formatCurrency(parseFloat(overtimeForm.amount)) : ''}
-                  readOnly
-                  className="w-full px-3 py-2 border border-input rounded-lg bg-muted"
+                  type="number"
+                  step="0.01"
+                  value={overtimeForm.amount}
+                  onChange={(e) => setOvertimeForm({ ...overtimeForm, amount: e.target.value })}
+                  className="w-full px-3 py-2 border border-input rounded-lg focus:ring-2 focus:ring-ring"
                   placeholder="0.00"
                 />
-                <p className="text-xs text-muted-foreground mt-1">If left blank, Amount = Hours × Rate.</p>
+                <p className="text-xs text-muted-foreground mt-1">Auto-calculated from Hours × Rate, or enter directly</p>
               </div>
             </div>
             <div className="space-y-2">

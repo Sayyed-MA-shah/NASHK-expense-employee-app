@@ -7,7 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button'
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { ToastContainer, useToast } from '@/components/ui/toast'
-import { getEmployees, createEmployee, deleteEmployee, updateEmployee, getWorkRecordsByEmployee, getSalaryPaymentsByEmployee } from '@/lib/api'
+import { getEmployees, createEmployee, deleteEmployee, updateEmployee, getWorkRecordsByEmployee, getSalaryPaymentsByEmployee, getOvertimeRecordsByEmployee } from '@/lib/api'
 import { formatCurrency } from '@/lib/utils'
 import { 
   Plus, 
@@ -56,24 +56,46 @@ export default function EmployeesPage() {
       setLoading(true)
       const data = await getEmployees()
       
-      // Fetch work records and salary payments for each employee to calculate real totals
+      // Fetch work records/overtime and salary payments for each employee to calculate real totals
       const employeesWithTotals = await Promise.all(
         (data || []).map(async (emp) => {
           try {
-            const [workRecords, salaryPayments] = await Promise.all([
-              getWorkRecordsByEmployee(emp.id),
-              getSalaryPaymentsByEmployee(emp.id)
-            ])
-            
-            const totalEarned = workRecords.reduce((sum, wr) => sum + (wr.quantity * wr.price), 0)
-            const totalPaid = salaryPayments.reduce((sum, sp) => sum + sp.amount, 0)
-            const balance = totalEarned - totalPaid
-            
-            return {
-              ...emp,
-              total_earned: totalEarned,
-              advance_paid: totalPaid,
-              balance: balance
+            if (emp.type === 'fixed') {
+              // For fixed employees: calculate based on monthly salary + overtime
+              const [overtimeRecords, salaryPayments] = await Promise.all([
+                getOvertimeRecordsByEmployee(emp.id),
+                getSalaryPaymentsByEmployee(emp.id)
+              ])
+              
+              const overtimeTotal = overtimeRecords.reduce((sum, ot) => sum + (ot.amount || 0), 0)
+              const totalPaid = salaryPayments.reduce((sum, sp) => sum + (sp.amount || 0), 0)
+              // For fixed employees, total_earned includes monthly salary + overtime
+              const totalEarned = (emp.monthly_salary || 0) + overtimeTotal
+              const balance = totalEarned - totalPaid
+              
+              return {
+                ...emp,
+                total_earned: totalEarned,
+                advance_paid: totalPaid,
+                balance: balance
+              }
+            } else {
+              // For contractual employees: calculate based on work records
+              const [workRecords, salaryPayments] = await Promise.all([
+                getWorkRecordsByEmployee(emp.id),
+                getSalaryPaymentsByEmployee(emp.id)
+              ])
+              
+              const totalEarned = workRecords.reduce((sum, wr) => sum + (wr.quantity * wr.price), 0)
+              const totalPaid = salaryPayments.reduce((sum, sp) => sum + (sp.amount || 0), 0)
+              const balance = totalEarned - totalPaid
+              
+              return {
+                ...emp,
+                total_earned: totalEarned,
+                advance_paid: totalPaid,
+                balance: balance
+              }
             }
           } catch (error) {
             console.error(`Error loading data for employee ${emp.id}:`, error)

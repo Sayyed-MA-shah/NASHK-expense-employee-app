@@ -120,10 +120,10 @@ export default function FixedEmployeeReportPage() {
 
   // Calculations
   const monthlyCount = Math.ceil((new Date(endDate).getTime() - new Date(startDate).getTime()) / (1000 * 60 * 60 * 24 * 30))
-  const monthlySalaryTotal = (employee?.monthly_salary || 0) * monthlyCount
-  const overtimeTotal = filteredOvertimeRecords.reduce((sum, record) => sum + record.amount, 0)
+  const monthlySalaryTotal = employee ? ((employee.monthly_salary || 0) * monthlyCount) : 0
+  const overtimeTotal = filteredOvertimeRecords.reduce((sum, record) => sum + (record.amount || 0), 0)
   const totalSalary = monthlySalaryTotal + overtimeTotal
-  const totalPaid = filteredSalaryPayments.reduce((sum, payment) => sum + payment.amount, 0)
+  const totalPaid = filteredSalaryPayments.reduce((sum, payment) => sum + (payment.amount || 0), 0)
   const balance = totalSalary - totalPaid
 
   async function handleAddOvertime() {

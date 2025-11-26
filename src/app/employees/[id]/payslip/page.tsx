@@ -48,7 +48,267 @@ export default function EmployeePayslipPage() {
   }
 
   function handlePrint() {
-    window.print()
+    const printWindow = window.open('', '_blank')
+    if (!printWindow) return
+
+    const payslipHTML = `
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <meta charset="utf-8">
+          <title>Payslip - ${employee.first_name}${employee.last_name ? ` ${employee.last_name}` : ''}</title>
+          <style>
+            * {
+              margin: 0;
+              padding: 0;
+              box-sizing: border-box;
+            }
+            body {
+              font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+              padding: 30px;
+              background: white;
+              color: #000;
+            }
+            .payslip {
+              max-width: 800px;
+              margin: 0 auto;
+              background: white;
+            }
+            .header {
+              display: flex;
+              justify-content: space-between;
+              align-items: start;
+              border-bottom: 2px solid #000;
+              padding-bottom: 20px;
+              margin-bottom: 30px;
+            }
+            .header .left h1 {
+              font-size: 32px;
+              font-weight: bold;
+              color: #000;
+              margin-bottom: 4px;
+            }
+            .header .left p {
+              font-size: 14px;
+              color: #666;
+            }
+            .header .right {
+              text-align: right;
+            }
+            .header .right .label {
+              font-size: 12px;
+              color: #666;
+              margin-bottom: 4px;
+            }
+            .header .right .value {
+              font-size: 14px;
+              font-weight: 600;
+              color: #000;
+            }
+            .employee-info {
+              background: #f8f9fa;
+              border: 1px solid #dee2e6;
+              border-radius: 8px;
+              padding: 20px;
+              margin-bottom: 30px;
+            }
+            .info-grid {
+              display: grid;
+              grid-template-columns: 1fr 1fr;
+              gap: 20px;
+            }
+            .info-item {
+              padding: 8px 0;
+            }
+            .info-label {
+              font-size: 12px;
+              color: #666;
+              text-transform: uppercase;
+              margin-bottom: 4px;
+            }
+            .info-value {
+              font-size: 16px;
+              font-weight: 600;
+              color: #000;
+            }
+            .summary-section {
+              margin-bottom: 30px;
+            }
+            .summary-title {
+              font-size: 18px;
+              font-weight: bold;
+              color: #000;
+              margin-bottom: 15px;
+              padding-bottom: 8px;
+              border-bottom: 2px solid #e0e0e0;
+            }
+            .summary-table {
+              width: 100%;
+              border-collapse: collapse;
+              background: white;
+              border: 1px solid #dee2e6;
+            }
+            .summary-table tr {
+              border-bottom: 1px solid #e0e0e0;
+            }
+            .summary-table td {
+              padding: 12px 16px;
+              font-size: 14px;
+            }
+            .summary-table td:first-child {
+              color: #495057;
+              font-weight: 500;
+            }
+            .summary-table td:last-child {
+              text-align: right;
+              font-weight: 600;
+              color: #000;
+            }
+            .summary-table tr.total {
+              background: #f8f9fa;
+              font-weight: bold;
+            }
+            .summary-table tr.total td {
+              font-size: 16px;
+              padding: 16px;
+            }
+            .balance-positive {
+              color: #28a745;
+            }
+            .balance-negative {
+              color: #dc3545;
+            }
+            .balance-zero {
+              color: #6c757d;
+            }
+            .notes {
+              background: #e7f3ff;
+              border: 1px solid #b3d9ff;
+              border-radius: 8px;
+              padding: 16px;
+              margin-bottom: 30px;
+            }
+            .notes-title {
+              font-weight: 600;
+              margin-bottom: 8px;
+              font-size: 14px;
+            }
+            .notes ul {
+              list-style: disc;
+              margin-left: 20px;
+              font-size: 13px;
+              color: #495057;
+            }
+            .notes li {
+              margin-bottom: 4px;
+            }
+            .footer {
+              margin-top: 40px;
+              padding-top: 20px;
+              border-top: 1px solid #dee2e6;
+              text-align: center;
+              font-size: 12px;
+              color: #6c757d;
+            }
+            .footer p {
+              margin-bottom: 4px;
+            }
+            @media print {
+              body { padding: 0; }
+            }
+          </style>
+        </head>
+        <body>
+          <div class="payslip">
+            <div class="header">
+              <div class="left">
+                <h1>NASHK</h1>
+                <p>Employee Payslip</p>
+              </div>
+              <div class="right">
+                <div class="label">Generated Date</div>
+                <div class="value">${formatDate(new Date().toISOString())}</div>
+              </div>
+            </div>
+
+            <div class="employee-info">
+              <div class="info-grid">
+                <div class="info-item">
+                  <div class="info-label">Employee Name</div>
+                  <div class="info-value">${employee.first_name}${employee.last_name ? ` ${employee.last_name}` : ''}</div>
+                </div>
+                <div class="info-item">
+                  <div class="info-label">Role</div>
+                  <div class="info-value">${employee.role || 'N/A'}</div>
+                </div>
+                <div class="info-item">
+                  <div class="info-label">Phone</div>
+                  <div class="info-value">${employee.phone || 'N/A'}</div>
+                </div>
+              </div>
+            </div>
+
+            <div class="summary-section">
+              <div class="summary-title">Payment Summary</div>
+              <table class="summary-table">
+                <tbody>
+                  <tr>
+                    <td>Total Work Records</td>
+                    <td>${workRecords.length} records</td>
+                  </tr>
+                  <tr>
+                    <td>Total Earned</td>
+                    <td>${formatCurrency(totalEarned)}</td>
+                  </tr>
+                  <tr>
+                    <td>Total Salary Payments</td>
+                    <td>${salaryPayments.length} payments</td>
+                  </tr>
+                  <tr>
+                    <td>Total Salary Paid</td>
+                    <td>${formatCurrency(totalSalaryPaid)}</td>
+                  </tr>
+                  <tr class="total">
+                    <td>Net Balance</td>
+                    <td class="${balance < 0 ? 'balance-negative' : balance > 0 ? 'balance-positive' : 'balance-zero'}">
+                      ${formatCurrency(balance)}
+                      ${balance < 0 ? '<div style="font-size: 12px; font-weight: normal; margin-top: 4px;">(Overpaid)</div>' : ''}
+                      ${balance > 0 ? '<div style="font-size: 12px; font-weight: normal; margin-top: 4px;">(Payable to Employee)</div>' : ''}
+                      ${balance === 0 ? '<div style="font-size: 12px; font-weight: normal; margin-top: 4px;">(Cleared)</div>' : ''}
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+
+            <div class="notes">
+              <div class="notes-title">📋 Note:</div>
+              <ul>
+                <li>This is an official payslip generated by NASHK.</li>
+                <li>All payments are calculated based on work records and salary payments.</li>
+                <li>For any discrepancies, please contact the accounts department.</li>
+              </ul>
+            </div>
+
+            <div class="footer">
+              <p>Generated on ${formatDate(new Date().toISOString())}</p>
+              <p>This is a computer-generated document and does not require a signature.</p>
+            </div>
+          </div>
+          <script>
+            window.onload = function() {
+              window.print();
+              window.onafterprint = function() {
+                window.close();
+              }
+            }
+          </script>
+        </body>
+      </html>
+    `
+
+    printWindow.document.write(payslipHTML)
+    printWindow.document.close()
   }
 
   if (loading) {

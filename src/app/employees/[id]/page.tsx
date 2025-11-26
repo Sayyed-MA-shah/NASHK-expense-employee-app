@@ -304,9 +304,33 @@ export default function EmployeeReportPage() {
         {/* Print Header (only shows when printing) */}
         <div className="print-only mb-6">
           <h1 className="text-3xl font-bold mb-2">📄 Employee Report</h1>
-          <p className="text-gray-600">
-            {employee.first_name}{employee.last_name ? ` ${employee.last_name}` : ''} - {formatDate(startDate)} to {formatDate(endDate)}
+          <p className="text-gray-600 mb-4">
+            {employee.first_name}{employee.last_name ? ` ${employee.last_name}` : ''} | Phone: {employee.phone || 'N/A'}
           </p>
+          <p className="text-sm text-gray-600 mb-4">
+            <strong>Report Period:</strong> {formatDate(startDate)} to {formatDate(endDate)}
+          </p>
+          
+          {/* Print Summary */}
+          <div className="grid grid-cols-3 gap-4 mb-6">
+            <div className="border border-gray-200 rounded-lg p-4">
+              <div className="text-xs text-gray-500 uppercase mb-2">Total Earned</div>
+              <div className="text-2xl font-bold text-green-600">{formatCurrency(totalWork)}</div>
+              <div className="text-xs text-gray-500 mt-1">{filteredWorkRecords.length} work records</div>
+            </div>
+            <div className="border border-gray-200 rounded-lg p-4">
+              <div className="text-xs text-gray-500 uppercase mb-2">Salary Paid</div>
+              <div className="text-2xl font-bold text-blue-600">{formatCurrency(totalSalary)}</div>
+              <div className="text-xs text-gray-500 mt-1">{filteredSalaryPayments.length} payments</div>
+            </div>
+            <div className="border border-gray-200 rounded-lg p-4">
+              <div className="text-xs text-gray-500 uppercase mb-2">Balance</div>
+              <div className={`text-2xl font-bold ${balance < 0 ? 'text-red-600' : 'text-green-600'}`}>
+                {formatCurrency(balance)}
+              </div>
+              <div className="text-xs text-gray-500 mt-1">{balance < 0 ? 'Overpaid' : 'Outstanding'}</div>
+            </div>
+          </div>
         </div>
 
         {/* Filters and Actions */}
@@ -361,8 +385,8 @@ export default function EmployeeReportPage() {
           </CardContent>
         </Card>
 
-        {/* Summary Cards */}
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+        {/* Summary Cards - Screen Only */}
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 no-print">
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">Total Earned</CardTitle>

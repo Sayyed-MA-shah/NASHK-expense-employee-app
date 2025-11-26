@@ -156,7 +156,14 @@ export function formatDate(
   formatPattern?: 'short' | 'medium' | 'long' | 'relative' | string,
   locale: string = 'en-US'
 ): string {
+  if (!date) return ''
+  
   const dateObj = typeof date === 'string' ? new Date(date) : date
+  
+  // Check if date is valid
+  if (isNaN(dateObj.getTime())) {
+    return ''
+  }
 
   if (formatPattern === 'relative') {
     return formatRelativeTime(dateObj)

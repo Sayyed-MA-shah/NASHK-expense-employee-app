@@ -36,13 +36,15 @@ export default function EmployeesPage() {
   const [addForm, setAddForm] = useState({
     fullName: '',
     phone: '',
-    role: ''
+    role: '',
+    monthlySalary: ''
   })
 
   const [editForm, setEditForm] = useState({
     fullName: '',
     phone: '',
-    role: ''
+    role: '',
+    monthlySalary: ''
   })
 
   useEffect(() => {
@@ -113,6 +115,11 @@ export default function EmployeesPage() {
       return
     }
 
+    if (activeTab === 'fixed' && !addForm.monthlySalary) {
+      toast.warning('Missing Fields', 'Please enter monthly salary for fixed employee')
+      return
+    }
+
     const nameParts = addForm.fullName.trim().split(' ')
     const firstName = nameParts[0]
     const lastName = nameParts.slice(1).join(' ') || ''
@@ -126,15 +133,16 @@ export default function EmployeesPage() {
         type: activeTab,
         status: 'active',
         hire_date: new Date().toISOString().split('T')[0],
+        monthly_salary: activeTab === 'fixed' ? parseFloat(addForm.monthlySalary) : null,
         total_earned: 0,
         advance_paid: 0,
         balance: 0
       })
 
-      toast.success('Employee Added', 'Temp employee has been added successfully')
+      toast.success('Employee Added', `${activeTab === 'contractual' ? 'Temp' : 'Fixed'} employee has been added successfully`)
       await loadEmployees()
       setShowAddForm(false)
-      setAddForm({ fullName: '', phone: '', role: '' })
+      setAddForm({ fullName: '', phone: '', role: '', monthlySalary: '' })
     } catch (error) {
       console.error('Error adding employee:', error)
       toast.error('Failed to add employee', error instanceof Error ? error.message : 'Unknown error')
@@ -146,7 +154,8 @@ export default function EmployeesPage() {
     setEditForm({
       fullName: `${employee.first_name} ${employee.last_name}`,
       phone: employee.phone,
-      role: employee.role
+      role: employee.role,
+      monthlySalary: employee.monthly_salary ? String(employee.monthly_salary) : ''
     })
     setEditDialogOpen(true)
   }
@@ -348,7 +357,7 @@ export default function EmployeesPage() {
                       <th className="text-left p-2 font-medium">Name</th>
                       <th className="text-left p-2 font-medium">Phone</th>
                       <th className="text-left p-2 font-medium">Job Role</th>
-                      <th className="text-left p-2 font-medium">Total Earned</th>
+                      <th className="text-left p-2 font-medium">{activeTab === 'fixed' ? 'Monthly Salary' : 'Total Earned'}</th>
                       <th className="text-left p-2 font-medium">Total Paid</th>
                       <th className="text-left p-2 font-medium">Balance</th>
                       <th className="text-left p-2 font-medium">Actions</th>
@@ -359,7 +368,7 @@ export default function EmployeesPage() {
                       <tr key={employee.id} className="border-b hover:bg-muted/50">
                         <td className="p-2 font-medium">
                           <button
-                            onClick={() => router.push(`/employees/${employee.id}`)}
+                            onClick={() => router.push(employee.type === 'fixed' ? `/employees/fixed/${employee.id}` : `/employees/${employee.id}`)}
                             className="text-blue-600 hover:text-blue-800 hover:underline cursor-pointer"
                           >
                             {employee.first_name}{employee.last_name ? ` ${employee.last_name}` : ''}
@@ -367,7 +376,9 @@ export default function EmployeesPage() {
                         </td>
                         <td className="p-2 text-sm">{employee.phone}</td>
                         <td className="p-2 text-sm capitalize">{employee.role}</td>
-                        <td className="p-2 font-medium">{formatCurrency(employee.total_earned || 0)}</td>
+                        <td className="p-2 font-medium">
+                          {formatCurrency(employee.type === 'fixed' ? (employee.monthly_salary || 0) : (employee.total_earned || 0))}
+                        </td>
                         <td className="p-2 font-medium text-red-600">{formatCurrency(employee.advance_paid || 0)}</td>
                         <td className={`p-2 font-medium ${(employee.balance || 0) < 0 ? 'text-red-600' : 'text-green-600'}`}>
                           {formatCurrency(employee.balance || 0)}
@@ -424,7 +435,7 @@ export default function EmployeesPage() {
           <DialogHeader>
             <DialogTitle>👤 Add New Employee</DialogTitle>
             <DialogDescription>
-              Add a new contractual (temp) employee
+              Add a new {activeTab === 'contractual' ? 'contractual (temp)' : 'fixed salary'} employee
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-4">
@@ -461,13 +472,27 @@ export default function EmployeesPage() {
                 required
               />
             </div>
+            {activeTab === 'fixed' && (
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Monthly Salary *</label>
+                <input
+                  type="number"
+                  step="0.01"
+                  value={addForm.monthlySalary}
+                  onChange={(e) => setAddForm({ ...addForm, monthlySalary: e.target.value })}
+                  className="w-full px-3 py-2 border border-input rounded-md"
+                  placeholder="Enter monthly salary"
+                  required
+                />
+              </div>
+            )}
           </div>
           <DialogFooter>
             <Button
               variant="outline"
               onClick={() => {
                 setShowAddForm(false)
-                setAddForm({ fullName: '', phone: '', role: '' })
+                setAddForm({ fullName: '', phone: '', role: '', monthlySalary: '' })
               }}
             >
               Cancel

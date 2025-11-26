@@ -13,6 +13,8 @@ import {
   getSalaryPaymentsByEmployee,
   createWorkRecord,
   createSalaryPayment,
+  updateWorkRecord,
+  updateSalaryPayment,
   deleteWorkRecord,
   deleteSalaryPayment
 } from '@/lib/api'
@@ -57,10 +59,14 @@ export default function EmployeeReportPage() {
   // Dialog states
   const [showAddWork, setShowAddWork] = useState(false)
   const [showAddSalary, setShowAddSalary] = useState(false)
+  const [showEditWork, setShowEditWork] = useState(false)
+  const [showEditSalary, setShowEditSalary] = useState(false)
   const [deleteWorkDialogOpen, setDeleteWorkDialogOpen] = useState(false)
   const [workToDelete, setWorkToDelete] = useState<string | null>(null)
+  const [workToEdit, setWorkToEdit] = useState<any>(null)
   const [deleteSalaryDialogOpen, setDeleteSalaryDialogOpen] = useState(false)
   const [salaryToDelete, setSalaryToDelete] = useState<string | null>(null)
+  const [salaryToEdit, setSalaryToEdit] = useState<any>(null)
 
   // Form states
   const [workForm, setWorkForm] = useState({
@@ -70,6 +76,19 @@ export default function EmployeeReportPage() {
 
   const [salaryForm, setSalaryForm] = useState({
     date: new Date().toISOString().split('T')[0],
+    amount: '',
+    description: ''
+  })
+
+  const [editWorkForm, setEditWorkForm] = useState({
+    date: '',
+    description: '',
+    quantity: '',
+    price: ''
+  })
+
+  const [editSalaryForm, setEditSalaryForm] = useState({
+    date: '',
     amount: '',
     description: ''
   })
@@ -139,22 +158,22 @@ export default function EmployeeReportPage() {
   }
 
   async function handleAddWork() {
-    // Validate all items
+    // Validate all items - need description and price, quantity is optional
     const validItems = workForm.items.filter(item => 
-      item.description.trim() && item.quantity && item.price
+      item.description.trim() && item.price
     )
 
     if (validItems.length === 0) {
-      toast.warning('Missing Fields', 'Please fill in at least one complete work item')
+      toast.warning('Missing Fields', 'Please fill in at least one work item with description and price/amount')
       return
     }
 
     try {
       // Create all work records
       const promises = validItems.map(item => {
-        const quantity = parseFloat(item.quantity)
+        const quantity = item.quantity ? parseFloat(item.quantity) : 1
         const price = parseFloat(item.price)
-        const total = quantity * price
+        const total = item.quantity ? (quantity * price) : price
 
         return createWorkRecord({
           employee_id: employeeId,
@@ -248,6 +267,90 @@ export default function EmployeeReportPage() {
     } finally {
       setDeleteSalaryDialogOpen(false)
       setSalaryToDelete(null)
+    }
+  }
+
+  function handleEditWork(record: any) {
+    setWorkToEdit(record)
+    setEditWorkForm({
+      date: record.date,
+      description: record.description,
+      quantity: record.quantity.toString(),
+      price: record.price.toString()
+    })
+    setShowEditWork(true)
+  }
+
+  async function handleUpdateWork() {
+    if (!workToEdit || !editWorkForm.description || !editWorkForm.price) {
+      toast.warning('Missing Fields', 'Please fill in description and price/amount')
+      return
+    }
+
+    try {
+      const quantity = editWorkForm.quantity ? parseFloat(editWorkForm.quantity) : 1
+      const price = parseFloat(editWorkForm.price)
+      const total = editWorkForm.quantity ? (quantity * price) : price
+
+      await updateWorkRecord(workToEdit.id, {
+        date: editWorkForm.date,
+        description: editWorkForm.description,
+        quantity: quantity,
+        price: price,
+        total: total
+      })
+
+      toast.success('Work Updated', 'Work record has been updated successfully')
+      await loadData()
+      setShowEditWork(false)
+      setWorkToEdit(null)
+      setEditWorkForm({
+        date: '',
+        description: '',
+        quantity: '',
+        price: ''
+      })
+    } catch (error) {
+      console.error('Error updating work:', error)
+      toast.error('Failed to update work', error instanceof Error ? error.message : 'Unknown error')
+    }
+  }
+
+  function handleEditSalary(payment: any) {
+    setSalaryToEdit(payment)
+    setEditSalaryForm({
+      date: payment.payment_date,
+      amount: payment.amount.toString(),
+      description: payment.notes || ''
+    })
+    setShowEditSalary(true)
+  }
+
+  async function handleUpdateSalary() {
+    if (!salaryToEdit || !editSalaryForm.amount) {
+      toast.warning('Missing Fields', 'Please enter an amount')
+      return
+    }
+
+    try {
+      await updateSalaryPayment(salaryToEdit.id, {
+        payment_date: editSalaryForm.date,
+        amount: parseFloat(editSalaryForm.amount),
+        notes: editSalaryForm.description || null
+      })
+
+      toast.success('Salary Updated', 'Salary payment has been updated successfully')
+      await loadData()
+      setShowEditSalary(false)
+      setSalaryToEdit(null)
+      setEditSalaryForm({
+        date: '',
+        amount: '',
+        description: ''
+      })
+    } catch (error) {
+      console.error('Error updating salary:', error)
+      toast.error('Failed to update salary', error instanceof Error ? error.message : 'Unknown error')
     }
   }
 
@@ -718,14 +821,29 @@ export default function EmployeeReportPage() {
                           <td className="p-2 text-right">{formatCurrency(wr.price)}</td>
                           <td className="p-2 text-right font-medium">{formatCurrency(wr.quantity * wr.price)}</td>
                           <td className="p-2 text-center">
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => handleDeleteWork(wr.id)}
-                              className="h-8 w-8 p-0 text-destructive hover:text-destructive hover:bg-destructive/10"
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
+                            <div className="flex items-center justify-center gap-1">
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => handleEditWork(wr)}
+                                className="h-8 w-8 p-0 text-blue-600 hover:text-blue-700 hover:bg-blue-50"
+                                title="Edit"
+                              >
+                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="h-4 w-4">
+                                  <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+                                  <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
+                                </svg>
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => handleDeleteWork(wr.id)}
+                                className="h-8 w-8 p-0 text-destructive hover:text-destructive hover:bg-destructive/10"
+                                title="Delete"
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            </div>
                           </td>
                         </tr>
                       ))
@@ -764,8 +882,8 @@ export default function EmployeeReportPage() {
                   <thead className="sticky top-0 bg-background">
                     <tr className="border-b">
                       <th className="text-left p-2 font-medium">Date</th>
-                      <th className="text-right p-2 font-medium">Amount</th>
                       <th className="text-left p-2 font-medium">Description</th>
+                      <th className="text-right p-2 font-medium">Amount</th>
                       <th className="text-center p-2 font-medium">Action</th>
                     </tr>
                   </thead>
@@ -774,17 +892,32 @@ export default function EmployeeReportPage() {
                       filteredSalaryPayments.map((sp) => (
                         <tr key={sp.id} className="border-b hover:bg-muted/50">
                           <td className="p-2 text-sm">{formatDate(sp.payment_date)}</td>
-                          <td className="p-2 text-right font-medium">{formatCurrency(sp.amount)}</td>
                           <td className="p-2 text-sm text-muted-foreground">{sp.notes || '-'}</td>
+                          <td className="p-2 text-right font-medium">{formatCurrency(sp.amount)}</td>
                           <td className="p-2 text-center">
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => handleDeleteSalary(sp.id)}
-                              className="h-8 w-8 p-0 text-destructive hover:text-destructive hover:bg-destructive/10"
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
+                            <div className="flex items-center justify-center gap-1">
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => handleEditSalary(sp)}
+                                className="h-8 w-8 p-0 text-blue-600 hover:text-blue-700 hover:bg-blue-50"
+                                title="Edit"
+                              >
+                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="h-4 w-4">
+                                  <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+                                  <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
+                                </svg>
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => handleDeleteSalary(sp.id)}
+                                className="h-8 w-8 p-0 text-destructive hover:text-destructive hover:bg-destructive/10"
+                                title="Delete"
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            </div>
                           </td>
                         </tr>
                       ))
@@ -843,11 +976,17 @@ export default function EmployeeReportPage() {
                 </Button>
               </div>
 
+              {/* Helper Text */}
+              <div className="bg-blue-50 border border-blue-200 rounded-md p-3 text-xs text-blue-800">
+                <strong>💡 Tip:</strong> Enter <strong>Quantity + Price</strong> for per-item calculation (e.g., 10 items × $5 = $50), 
+                or leave <strong>Quantity blank</strong> and enter the total amount directly in the <strong>Price</strong> field.
+              </div>
+
               {/* Table Header */}
               <div className="grid grid-cols-12 gap-2 text-xs font-medium text-muted-foreground px-2">
-                <div className="col-span-5">Description</div>
-                <div className="col-span-2">Quantity</div>
-                <div className="col-span-2">Price</div>
+                <div className="col-span-5">Description *</div>
+                <div className="col-span-2">Quantity (optional)</div>
+                <div className="col-span-2">Price / Amount *</div>
                 <div className="col-span-2">Total</div>
                 <div className="col-span-1"></div>
               </div>
@@ -855,8 +994,8 @@ export default function EmployeeReportPage() {
               {/* Work Items */}
               <div className="space-y-2">
                 {workForm.items.map((item, index) => {
-                  const itemTotal = item.quantity && item.price 
-                    ? parseFloat(item.quantity) * parseFloat(item.price) 
+                  const itemTotal = item.price
+                    ? (item.quantity ? parseFloat(item.quantity) * parseFloat(item.price) : parseFloat(item.price))
                     : 0
 
                   return (
@@ -918,8 +1057,11 @@ export default function EmployeeReportPage() {
                 <p className="text-xl font-bold text-green-600">
                   {formatCurrency(
                     workForm.items.reduce((sum, item) => {
-                      if (item.quantity && item.price) {
-                        return sum + (parseFloat(item.quantity) * parseFloat(item.price))
+                      if (item.price) {
+                        const amount = item.quantity 
+                          ? parseFloat(item.quantity) * parseFloat(item.price)
+                          : parseFloat(item.price)
+                        return sum + amount
                       }
                       return sum
                     }, 0)
@@ -942,7 +1084,7 @@ export default function EmployeeReportPage() {
               Cancel
             </Button>
             <Button onClick={handleAddWork}>
-              Add {workForm.items.filter(i => i.description && i.quantity && i.price).length} Work Item(s)
+              Add {workForm.items.filter(i => i.description && i.price).length} Work Item(s)
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -994,6 +1136,140 @@ export default function EmployeeReportPage() {
           <DialogFooter>
             <Button variant="outline" onClick={() => setShowAddSalary(false)}>Cancel</Button>
             <Button onClick={handleAddSalary}>Add Salary</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit Work Dialog */}
+      <Dialog open={showEditWork} onOpenChange={setShowEditWork}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>✏️ Edit Work Record</DialogTitle>
+            <DialogDescription>
+              Update work record details
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Date *</label>
+              <input
+                type="date"
+                value={editWorkForm.date}
+                onChange={(e) => setEditWorkForm({ ...editWorkForm, date: e.target.value })}
+                className="w-full px-3 py-2 border border-input rounded-md"
+                required
+              />
+            </div>
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Description *</label>
+              <input
+                type="text"
+                value={editWorkForm.description}
+                onChange={(e) => setEditWorkForm({ ...editWorkForm, description: e.target.value })}
+                className="w-full px-3 py-2 border border-input rounded-md"
+                placeholder="Work description"
+                required
+              />
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Quantity (optional)</label>
+                <input
+                  type="number"
+                  step="0.01"
+                  value={editWorkForm.quantity}
+                  onChange={(e) => setEditWorkForm({ ...editWorkForm, quantity: e.target.value })}
+                  className="w-full px-3 py-2 border border-input rounded-md"
+                  placeholder="0"
+                />
+              </div>
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Price / Amount *</label>
+                <input
+                  type="number"
+                  step="0.01"
+                  value={editWorkForm.price}
+                  onChange={(e) => setEditWorkForm({ ...editWorkForm, price: e.target.value })}
+                  className="w-full px-3 py-2 border border-input rounded-md"
+                  placeholder="0.00"
+                  required
+                />
+              </div>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => {
+                setShowEditWork(false)
+                setWorkToEdit(null)
+              }}
+            >
+              Cancel
+            </Button>
+            <Button onClick={handleUpdateWork}>
+              Update
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit Salary Dialog */}
+      <Dialog open={showEditSalary} onOpenChange={setShowEditSalary}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>✏️ Edit Salary Payment</DialogTitle>
+            <DialogDescription>
+              Update salary payment details
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Payment Date *</label>
+              <input
+                type="date"
+                value={editSalaryForm.date}
+                onChange={(e) => setEditSalaryForm({ ...editSalaryForm, date: e.target.value })}
+                className="w-full px-3 py-2 border border-input rounded-md"
+                required
+              />
+            </div>
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Amount *</label>
+              <input
+                type="number"
+                step="0.01"
+                value={editSalaryForm.amount}
+                onChange={(e) => setEditSalaryForm({ ...editSalaryForm, amount: e.target.value })}
+                className="w-full px-3 py-2 border border-input rounded-md"
+                placeholder="0.00"
+                required
+              />
+            </div>
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Description</label>
+              <input
+                type="text"
+                value={editSalaryForm.description}
+                onChange={(e) => setEditSalaryForm({ ...editSalaryForm, description: e.target.value })}
+                className="w-full px-3 py-2 border border-input rounded-md"
+                placeholder="Optional notes"
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => {
+                setShowEditSalary(false)
+                setSalaryToEdit(null)
+              }}
+            >
+              Cancel
+            </Button>
+            <Button onClick={handleUpdateSalary}>
+              Update
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

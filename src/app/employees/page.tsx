@@ -127,6 +127,7 @@ export default function EmployeesPage() {
 
   // Calculate stats for active tab
   const totalEmployees = activeEmployees.length
+  const totalEarned = activeEmployees.reduce((sum, emp) => sum + (emp.total_earned || 0), 0)
   const tempPaidSalary = activeEmployees.reduce((sum, emp) => sum + (emp.advance_paid || 0), 0)
   const dueSalaryTotal = activeEmployees.reduce((sum, emp) => sum + (emp.balance > 0 ? emp.balance : 0), 0)
   const totalAdvancePaid = activeEmployees.reduce((sum, emp) => sum + (emp.balance < 0 ? Math.abs(emp.balance) : 0), 0)
@@ -254,13 +255,20 @@ export default function EmployeesPage() {
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Total Employees</CardTitle>
-              <UserPlus className="h-4 w-4 text-muted-foreground" />
+              <CardTitle className="text-sm font-medium">
+                {activeTab === 'contractual' ? 'Total Earned' : 'Total Salaries'}
+              </CardTitle>
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="h-4 w-4 text-green-600">
+                <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
+              </svg>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{totalEmployees}</div>
+              <div className="text-2xl font-bold text-green-600">{formatCurrency(totalEarned)}</div>
               <p className="text-xs text-muted-foreground">
-                {activeTab === 'contractual' ? 'Contractual employees' : 'Fixed employees'}
+                {activeTab === 'contractual' ? 'Total work earnings' : 'Monthly salaries + overtime'}
+              </p>
+              <p className="text-xs text-muted-foreground mt-2 pt-2 border-t">
+                Total Employees: <span className="font-semibold">{totalEmployees}</span>
               </p>
             </CardContent>
           </Card>

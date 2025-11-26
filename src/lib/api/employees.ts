@@ -112,6 +112,18 @@ export async function createWorkRecord(workRecord: WorkRecordInsert) {
   return data as WorkRecordRow
 }
 
+export async function updateWorkRecord(id: string, workRecord: Partial<WorkRecordInsert>) {
+  const { data, error } = await supabase
+    .from('work_records')
+    .update(workRecord as any)
+    .eq('id', id)
+    .select()
+    .single()
+  
+  if (error) throw error
+  return data as WorkRecordRow
+}
+
 export async function deleteWorkRecord(id: string) {
   const { error } = await supabase
     .from('work_records')
@@ -141,6 +153,18 @@ export async function createSalaryPayment(payment: SalaryPaymentInsert) {
   const { data, error } = await supabase
     .from('salary_payments')
     .insert(payment as any)
+    .select()
+    .single()
+  
+  if (error) throw error
+  return data as SalaryPaymentRow
+}
+
+export async function updateSalaryPayment(id: string, payment: Partial<SalaryPaymentInsert>) {
+  const { data, error } = await supabase
+    .from('salary_payments')
+    .update(payment as any)
+    .eq('id', id)
     .select()
     .single()
   
@@ -203,6 +227,18 @@ export async function createOvertimeRecord(overtime: OvertimeRecordInsert) {
   const { data, error } = await supabase
     .from('overtime_records')
     .insert(overtime as any)
+    .select()
+    .single()
+  
+  if (error) throw error
+  return data as OvertimeRecordRow
+}
+
+export async function updateOvertimeRecord(id: string, overtime: Partial<OvertimeRecordInsert>) {
+  const { data, error } = await supabase
+    .from('overtime_records')
+    .update(overtime as any)
+    .eq('id', id)
     .select()
     .single()
   

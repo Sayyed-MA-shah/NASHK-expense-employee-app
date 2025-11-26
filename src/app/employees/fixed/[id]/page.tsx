@@ -13,6 +13,8 @@ import {
   getSalaryPaymentsByEmployee,
   createOvertimeRecord,
   createSalaryPayment,
+  updateOvertimeRecord,
+  updateSalaryPayment,
   deleteOvertimeRecord,
   deleteSalaryPayment
 } from '@/lib/api'
@@ -61,10 +63,14 @@ export default function FixedEmployeeReportPage() {
   const [showAddOvertime, setShowAddOvertime] = useState(false)
   const [showAddSalary, setShowAddSalary] = useState(false)
   const [showPayslip, setShowPayslip] = useState(false)
+  const [showEditOvertime, setShowEditOvertime] = useState(false)
+  const [showEditSalary, setShowEditSalary] = useState(false)
   const [deleteOvertimeDialogOpen, setDeleteOvertimeDialogOpen] = useState(false)
   const [overtimeToDelete, setOvertimeToDelete] = useState<string | null>(null)
+  const [overtimeToEdit, setOvertimeToEdit] = useState<any>(null)
   const [deleteSalaryDialogOpen, setDeleteSalaryDialogOpen] = useState(false)
   const [salaryToDelete, setSalaryToDelete] = useState<string | null>(null)
+  const [salaryToEdit, setSalaryToEdit] = useState<any>(null)
 
   // Form states
   const [overtimeForm, setOvertimeForm] = useState({
@@ -77,6 +83,20 @@ export default function FixedEmployeeReportPage() {
 
   const [salaryForm, setSalaryForm] = useState({
     date: new Date().toISOString().split('T')[0],
+    amount: '',
+    description: ''
+  })
+
+  const [editOvertimeForm, setEditOvertimeForm] = useState({
+    date: '',
+    description: '',
+    hours: '',
+    rate: '',
+    amount: ''
+  })
+
+  const [editSalaryForm, setEditSalaryForm] = useState({
+    date: '',
     amount: '',
     description: ''
   })
@@ -243,6 +263,101 @@ export default function FixedEmployeeReportPage() {
     } finally {
       setDeleteSalaryDialogOpen(false)
       setSalaryToDelete(null)
+    }
+  }
+
+  function handleEditOvertime(record: any) {
+    setOvertimeToEdit(record)
+    setEditOvertimeForm({
+      date: record.date,
+      description: record.description,
+      hours: record.hours.toString(),
+      rate: record.rate.toString(),
+      amount: record.amount.toString()
+    })
+    setShowEditOvertime(true)
+  }
+
+  async function handleUpdateOvertime() {
+    if (!overtimeToEdit || !editOvertimeForm.description) {
+      toast.warning('Missing Fields', 'Please enter a description')
+      return
+    }
+
+    const hasHoursAndRate = editOvertimeForm.hours && editOvertimeForm.rate
+    const hasDirectAmount = editOvertimeForm.amount && !editOvertimeForm.hours
+
+    if (!hasHoursAndRate && !hasDirectAmount) {
+      toast.warning('Missing Fields', 'Please enter either (Hours + Rate) or Amount directly')
+      return
+    }
+
+    try {
+      const hours = editOvertimeForm.hours ? parseFloat(editOvertimeForm.hours) : 0
+      const rate = editOvertimeForm.rate ? parseFloat(editOvertimeForm.rate) : 0
+      const finalAmount = hasHoursAndRate ? (hours * rate) : parseFloat(editOvertimeForm.amount)
+
+      await updateOvertimeRecord(overtimeToEdit.id, {
+        date: editOvertimeForm.date,
+        description: editOvertimeForm.description,
+        hours: hours,
+        rate: rate,
+        amount: finalAmount,
+        total: finalAmount
+      })
+
+      toast.success('Overtime Updated', 'Overtime record has been updated successfully')
+      await loadData()
+      setShowEditOvertime(false)
+      setOvertimeToEdit(null)
+      setEditOvertimeForm({
+        date: '',
+        description: '',
+        hours: '',
+        rate: '',
+        amount: ''
+      })
+    } catch (error) {
+      console.error('Error updating overtime:', error)
+      toast.error('Failed to update overtime', error instanceof Error ? error.message : 'Unknown error')
+    }
+  }
+
+  function handleEditSalary(payment: any) {
+    setSalaryToEdit(payment)
+    setEditSalaryForm({
+      date: payment.payment_date,
+      amount: payment.amount.toString(),
+      description: payment.notes || ''
+    })
+    setShowEditSalary(true)
+  }
+
+  async function handleUpdateSalary() {
+    if (!salaryToEdit || !editSalaryForm.amount) {
+      toast.warning('Missing Fields', 'Please enter an amount')
+      return
+    }
+
+    try {
+      await updateSalaryPayment(salaryToEdit.id, {
+        payment_date: editSalaryForm.date,
+        amount: parseFloat(editSalaryForm.amount),
+        notes: editSalaryForm.description || null
+      })
+
+      toast.success('Salary Updated', 'Salary payment has been updated successfully')
+      await loadData()
+      setShowEditSalary(false)
+      setSalaryToEdit(null)
+      setEditSalaryForm({
+        date: '',
+        amount: '',
+        description: ''
+      })
+    } catch (error) {
+      console.error('Error updating salary:', error)
+      toast.error('Failed to update salary', error instanceof Error ? error.message : 'Unknown error')
     }
   }
 
@@ -1063,14 +1178,29 @@ export default function FixedEmployeeReportPage() {
                           <td className="p-2 text-right">{formatCurrency(record.rate)}</td>
                           <td className="p-2 text-right font-medium text-purple-600">{formatCurrency(record.amount)}</td>
                           <td className="p-2 text-center">
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => handleDeleteOvertime(record.id)}
-                              className="h-8 w-8 p-0 text-destructive hover:text-destructive hover:bg-destructive/10"
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
+                            <div className="flex items-center justify-center gap-1">
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => handleEditOvertime(record)}
+                                className="h-8 w-8 p-0 text-blue-600 hover:text-blue-700 hover:bg-blue-50"
+                                title="Edit"
+                              >
+                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="h-4 w-4">
+                                  <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+                                  <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
+                                </svg>
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => handleDeleteOvertime(record.id)}
+                                className="h-8 w-8 p-0 text-destructive hover:text-destructive hover:bg-destructive/10"
+                                title="Delete"
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            </div>
                           </td>
                         </tr>
                       ))
@@ -1109,8 +1239,8 @@ export default function FixedEmployeeReportPage() {
                   <thead className="sticky top-0 bg-background">
                     <tr className="border-b">
                       <th className="text-left p-2 font-medium">Date</th>
-                      <th className="text-right p-2 font-medium">Amount</th>
                       <th className="text-left p-2 font-medium">Description</th>
+                      <th className="text-right p-2 font-medium">Amount</th>
                       <th className="text-center p-2 font-medium">Action</th>
                     </tr>
                   </thead>
@@ -1119,17 +1249,32 @@ export default function FixedEmployeeReportPage() {
                       filteredSalaryPayments.map((payment) => (
                         <tr key={payment.id} className="border-b hover:bg-muted/50">
                           <td className="p-2 text-sm">{formatDate(payment.payment_date)}</td>
-                          <td className="p-2 text-right font-medium">{formatCurrency(payment.amount)}</td>
                           <td className="p-2 text-sm text-muted-foreground">{payment.notes || '-'}</td>
+                          <td className="p-2 text-right font-medium">{formatCurrency(payment.amount)}</td>
                           <td className="p-2 text-center">
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => handleDeleteSalary(payment.id)}
-                              className="h-8 w-8 p-0 text-destructive hover:text-destructive hover:bg-destructive/10"
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
+                            <div className="flex items-center justify-center gap-1">
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => handleEditSalary(payment)}
+                                className="h-8 w-8 p-0 text-blue-600 hover:text-blue-700 hover:bg-blue-50"
+                                title="Edit"
+                              >
+                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="h-4 w-4">
+                                  <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+                                  <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
+                                </svg>
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => handleDeleteSalary(payment.id)}
+                                className="h-8 w-8 p-0 text-destructive hover:text-destructive hover:bg-destructive/10"
+                                title="Delete"
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            </div>
                           </td>
                         </tr>
                       ))
@@ -1161,6 +1306,150 @@ export default function FixedEmployeeReportPage() {
           </CardContent>
         </Card>
       </div>
+
+      {/* Edit Overtime Dialog */}
+      <Dialog open={showEditOvertime} onOpenChange={setShowEditOvertime}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>✏️ Edit Overtime Record</DialogTitle>
+            <DialogDescription>
+              Update overtime record details
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Date *</label>
+              <input
+                type="date"
+                value={editOvertimeForm.date}
+                onChange={(e) => setEditOvertimeForm({ ...editOvertimeForm, date: e.target.value })}
+                className="w-full px-3 py-2 border border-input rounded-md"
+                required
+              />
+            </div>
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Description *</label>
+              <input
+                type="text"
+                value={editOvertimeForm.description}
+                onChange={(e) => setEditOvertimeForm({ ...editOvertimeForm, description: e.target.value })}
+                className="w-full px-3 py-2 border border-input rounded-md"
+                placeholder="Overtime description"
+                required
+              />
+            </div>
+            <div className="grid grid-cols-3 gap-4">
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Hours</label>
+                <input
+                  type="number"
+                  step="0.5"
+                  value={editOvertimeForm.hours}
+                  onChange={(e) => setEditOvertimeForm({ ...editOvertimeForm, hours: e.target.value })}
+                  className="w-full px-3 py-2 border border-input rounded-md"
+                  placeholder="0"
+                />
+              </div>
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Rate</label>
+                <input
+                  type="number"
+                  step="0.01"
+                  value={editOvertimeForm.rate}
+                  onChange={(e) => setEditOvertimeForm({ ...editOvertimeForm, rate: e.target.value })}
+                  className="w-full px-3 py-2 border border-input rounded-md"
+                  placeholder="0.00"
+                />
+              </div>
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Amount</label>
+                <input
+                  type="number"
+                  step="0.01"
+                  value={editOvertimeForm.amount}
+                  onChange={(e) => setEditOvertimeForm({ ...editOvertimeForm, amount: e.target.value })}
+                  className="w-full px-3 py-2 border border-input rounded-md"
+                  placeholder="0.00"
+                />
+              </div>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => {
+                setShowEditOvertime(false)
+                setOvertimeToEdit(null)
+              }}
+            >
+              Cancel
+            </Button>
+            <Button onClick={handleUpdateOvertime}>
+              Update
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit Salary Dialog */}
+      <Dialog open={showEditSalary} onOpenChange={setShowEditSalary}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>✏️ Edit Salary Payment</DialogTitle>
+            <DialogDescription>
+              Update salary payment details
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Payment Date *</label>
+              <input
+                type="date"
+                value={editSalaryForm.date}
+                onChange={(e) => setEditSalaryForm({ ...editSalaryForm, date: e.target.value })}
+                className="w-full px-3 py-2 border border-input rounded-md"
+                required
+              />
+            </div>
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Amount *</label>
+              <input
+                type="number"
+                step="0.01"
+                value={editSalaryForm.amount}
+                onChange={(e) => setEditSalaryForm({ ...editSalaryForm, amount: e.target.value })}
+                className="w-full px-3 py-2 border border-input rounded-md"
+                placeholder="0.00"
+                required
+              />
+            </div>
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Description</label>
+              <input
+                type="text"
+                value={editSalaryForm.description}
+                onChange={(e) => setEditSalaryForm({ ...editSalaryForm, description: e.target.value })}
+                className="w-full px-3 py-2 border border-input rounded-md"
+                placeholder="Optional notes"
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => {
+                setShowEditSalary(false)
+                setSalaryToEdit(null)
+              }}
+            >
+              Cancel
+            </Button>
+            <Button onClick={handleUpdateSalary}>
+              Update
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* Add Overtime Dialog */}
       <Dialog open={showAddOvertime} onOpenChange={setShowAddOvertime}>

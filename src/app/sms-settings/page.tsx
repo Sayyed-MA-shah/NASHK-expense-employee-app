@@ -62,8 +62,30 @@ export default function SMSSettingsPage() {
 
     setSendingTest(true)
     try {
-      // This would call your SMS API endpoint
-      toast.success('Test SMS Sent', `Test message sent to ${testPhone}`)
+      const response = await fetch('/api/sms/send', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          phone: testPhone,
+          message: testMessage,
+          messageType: 'test',
+        }),
+      })
+
+      const data = await response.json()
+
+      if (!response.ok || !data.success) {
+        throw new Error(data.error || 'Failed to send SMS')
+      }
+
+      toast.success(
+        'SMS Sent Successfully', 
+        data.testMode 
+          ? 'Test SMS logged (not actually sent - test mode is ON)'
+          : `Message sent to ${testPhone}`
+      )
       setTestPhone('')
     } catch (error) {
       console.error('Error sending test SMS:', error)

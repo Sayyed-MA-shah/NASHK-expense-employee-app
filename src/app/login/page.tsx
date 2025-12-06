@@ -48,17 +48,6 @@ export default function LoginPage() {
         setTimeout(() => {
           router.push('/')
         }, 500)
-      } else if (formData.password === 'admin123') {
-        // Demo login for testing (remove in production)
-        localStorage.setItem('isAuthenticated', 'true')
-        localStorage.setItem('username', formData.username)
-        localStorage.setItem('userRole', 'user')
-        
-        toast.success('Login Successful', `Welcome back, ${formData.username}!`)
-        
-        setTimeout(() => {
-          router.push('/')
-        }, 500)
       } else {
         toast.error('Login Failed', 'Invalid username or password')
         setLoading(false)

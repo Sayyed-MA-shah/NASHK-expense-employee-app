@@ -28,19 +28,34 @@ export default function LoginPage() {
     setLoading(true)
 
     try {
-      // Simulate authentication - Replace with your actual auth logic
+      // Simulate authentication
       await new Promise(resolve => setTimeout(resolve, 1000))
 
-      // For demo: Accept any username with password "admin123"
-      // TODO: Replace with actual Supabase authentication
-      if (formData.password === 'admin123') {
-        // Store authentication state
+      // Super Admin credentials
+      const SUPER_ADMIN_USERNAME = 'Bilal_admin'
+      const SUPER_ADMIN_PASSWORD = 'Bilal984134'
+
+      // Check for super admin login
+      if (formData.username === SUPER_ADMIN_USERNAME && formData.password === SUPER_ADMIN_PASSWORD) {
+        // Store authentication state with admin role
         localStorage.setItem('isAuthenticated', 'true')
         localStorage.setItem('username', formData.username)
+        localStorage.setItem('userRole', 'super_admin')
+        
+        toast.success('Login Successful', `Welcome back, Super Admin!`)
+        
+        // Redirect to dashboard after short delay
+        setTimeout(() => {
+          router.push('/')
+        }, 500)
+      } else if (formData.password === 'admin123') {
+        // Demo login for testing (remove in production)
+        localStorage.setItem('isAuthenticated', 'true')
+        localStorage.setItem('username', formData.username)
+        localStorage.setItem('userRole', 'user')
         
         toast.success('Login Successful', `Welcome back, ${formData.username}!`)
         
-        // Redirect to dashboard after short delay
         setTimeout(() => {
           router.push('/')
         }, 500)
@@ -169,17 +184,6 @@ export default function LoginPage() {
                   </div>
                 )}
               </Button>
-
-              {/* Demo Credentials Info */}
-              <div className="mt-6 p-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
-                <p className="text-xs text-blue-800 dark:text-blue-200 font-medium mb-2">
-                  🔐 Demo Credentials:
-                </p>
-                <p className="text-xs text-blue-700 dark:text-blue-300">
-                  <strong>Username:</strong> Any username<br />
-                  <strong>Password:</strong> admin123
-                </p>
-              </div>
             </form>
           </CardContent>
         </Card>

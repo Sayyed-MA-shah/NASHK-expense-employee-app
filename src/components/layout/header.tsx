@@ -14,7 +14,7 @@ interface HeaderProps {
 
 export default function Header({ onMenuClick, className }: HeaderProps) {
   const { theme, setTheme } = useTheme()
-  const { username, logout } = useAuth()
+  const { username, userRole, isSuperAdmin, logout } = useAuth()
   const [showUserMenu, setShowUserMenu] = useState(false)
 
   const toggleTheme = () => {
@@ -101,6 +101,11 @@ export default function Header({ onMenuClick, className }: HeaderProps) {
                   <div className="px-4 py-3 border-b bg-muted/50">
                     <p className="text-sm font-medium">Signed in as</p>
                     <p className="text-sm text-muted-foreground truncate">{username || 'User'}</p>
+                    {isSuperAdmin && (
+                      <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-gradient-to-r from-yellow-500 to-orange-500 text-white mt-1">
+                        Super Admin
+                      </span>
+                    )}
                   </div>
                   <div className="py-1">
                     <button

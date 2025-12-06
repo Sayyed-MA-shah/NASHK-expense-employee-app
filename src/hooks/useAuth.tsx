@@ -8,15 +8,18 @@ export function useAuth() {
   const pathname = usePathname()
   const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null)
   const [username, setUsername] = useState<string>('')
+  const [userRole, setUserRole] = useState<string>('')
 
   useEffect(() => {
     // Check authentication status
     const authStatus = localStorage.getItem('isAuthenticated')
     const storedUsername = localStorage.getItem('username')
+    const storedRole = localStorage.getItem('userRole')
     
     if (authStatus === 'true') {
       setIsAuthenticated(true)
       setUsername(storedUsername || '')
+      setUserRole(storedRole || 'user')
     } else {
       setIsAuthenticated(false)
       // Redirect to login if not authenticated and not already on login page
@@ -29,6 +32,7 @@ export function useAuth() {
   const logout = () => {
     localStorage.removeItem('isAuthenticated')
     localStorage.removeItem('username')
+    localStorage.removeItem('userRole')
     setIsAuthenticated(false)
     router.push('/login')
   }
@@ -36,6 +40,8 @@ export function useAuth() {
   return {
     isAuthenticated,
     username,
+    userRole,
+    isSuperAdmin: userRole === 'super_admin',
     logout,
     isLoading: isAuthenticated === null
   }

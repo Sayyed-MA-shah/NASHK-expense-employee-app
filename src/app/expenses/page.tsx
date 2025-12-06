@@ -281,7 +281,7 @@ export default function ExpensesPage() {
     doc.setTextColor(255, 255, 255)
     doc.setFontSize(24)
     doc.setFont('helvetica', 'bold')
-    doc.text('NASHK', 15, 20)
+    doc.text('NASHAK', 15, 20)
     
     doc.setFontSize(10)
     doc.setFont('helvetica', 'normal')

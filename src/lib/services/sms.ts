@@ -167,16 +167,16 @@ class SMSService {
   // SMS Templates
   templates = {
     salaryPayment: (employeeName: string, amount: string, date: string) => 
-      `Hello ${employeeName}, your salary payment of ${amount} has been processed on ${date}. Thank you! - NASHK Portal`,
+      `Hello ${employeeName}, your salary payment of ${amount} has been processed on ${date}. Thank you! - NASHAK Portal`,
     
     workAssignment: (employeeName: string, workDescription: string, date: string) =>
-      `Hello ${employeeName}, new work assigned: ${workDescription} on ${date}. - NASHK Portal`,
+      `Hello ${employeeName}, new work assigned: ${workDescription} on ${date}. - NASHAK Portal`,
     
     advancePayment: (employeeName: string, amount: string, date: string) =>
-      `Hello ${employeeName}, advance payment of ${amount} has been approved on ${date}. - NASHK Portal`,
+      `Hello ${employeeName}, advance payment of ${amount} has been approved on ${date}. - NASHAK Portal`,
     
     overtimeApproved: (employeeName: string, hours: string, date: string) =>
-      `Hello ${employeeName}, overtime of ${hours} hours has been approved for ${date}. - NASHK Portal`,
+      `Hello ${employeeName}, overtime of ${hours} hours has been approved for ${date}. - NASHAK Portal`,
   }
 }
 

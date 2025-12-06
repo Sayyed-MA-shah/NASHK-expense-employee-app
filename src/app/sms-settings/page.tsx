@@ -15,7 +15,7 @@ export default function SMSSettingsPage() {
   const [settings, setSettings] = useState<any>(null)
   const [stats, setStats] = useState<any>(null)
   const [testPhone, setTestPhone] = useState('')
-  const [testMessage, setTestMessage] = useState('This is a test message from NASHK SP system')
+  const [testMessage, setTestMessage] = useState('This is a test message from NASHAK SP system')
   const [sendingTest, setSendingTest] = useState(false)
 
   useEffect(() => {

@@ -68,7 +68,7 @@ export default function LoginPage() {
             <Lock className="w-8 h-8 text-primary-foreground" />
           </div>
           <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
-            NASHK Portal
+            NASHAK Portal
           </h1>
           <p className="text-gray-600 dark:text-gray-400">
             Employee & Expense Management System
@@ -179,7 +179,7 @@ export default function LoginPage() {
 
         {/* Footer */}
         <div className="text-center mt-6 text-sm text-gray-600 dark:text-gray-400">
-          <p>© 2025 NASHK Portal. All rights reserved.</p>
+          <p>© 2025 NASHAK Portal. All rights reserved.</p>
         </div>
       </div>
 

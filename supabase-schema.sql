@@ -1,4 +1,4 @@
--- NASHK Expense & Employee Management System
+-- NASHAK Expense & Employee Management System
 -- Database Schema for Supabase
 
 -- Enable UUID extension

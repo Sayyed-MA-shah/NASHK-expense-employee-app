@@ -110,7 +110,7 @@ export const mockUserSettings: UserSettings = {
 }
 
 export const mockSystemSettings: SystemSettings = {
-  companyName: 'NASHK SP Solutions',
+  companyName: 'NASHAK SP Solutions',
   companyLogo: '/logo.png',
   defaultCurrency: 'USD',
   defaultTimezone: 'America/New_York',

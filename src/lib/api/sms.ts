@@ -5,17 +5,58 @@ export async function getSMSSettings() {
   const { data, error } = await supabase
     .from('sms_settings')
     .select('*')
+    .limit(1)
     .single()
 
-  if (error) throw error
+  if (error) {
+    // If no settings exist, create default settings
+    if (error.code === 'PGRST116') {
+      const { data: newData, error: insertError } = await supabase
+        .from('sms_settings')
+        .insert([{
+          enabled: false,
+          test_mode: true,
+          notify_on_salary_payment: true,
+          notify_on_work_assignment: false,
+          notify_on_advance_payment: true,
+          notify_on_overtime: false,
+        }])
+        .select()
+        .single()
+      
+      if (insertError) throw insertError
+      return newData
+    }
+    throw error
+  }
   return data
 }
 
 export async function updateSMSSettings(settings: any) {
+  // Get the first settings record
+  const { data: existingData } = await supabase
+    .from('sms_settings')
+    .select('id')
+    .limit(1)
+    .single()
+
+  if (!existingData) {
+    // Create new settings if none exist
+    const { data, error } = await supabase
+      .from('sms_settings')
+      .insert([settings])
+      .select()
+      .single()
+
+    if (error) throw error
+    return data
+  }
+
+  // Update existing settings
   const { data, error } = await supabase
     .from('sms_settings')
     .update(settings)
-    .eq('id', settings.id)
+    .eq('id', existingData.id)
     .select()
     .single()
 

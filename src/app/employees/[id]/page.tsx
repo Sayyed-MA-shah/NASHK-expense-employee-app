@@ -645,19 +645,20 @@ export default function EmployeeReportPage() {
     <DashboardLayout>
       <div className="space-y-6 max-w-6xl mx-auto">
         {/* Header */}
-        <div className="flex justify-between items-start no-print">
-          <div>
+        <div className="flex flex-col sm:flex-row justify-between items-start gap-4 no-print">
+          <div className="w-full">
             <div className="flex items-center gap-2 mb-2">
               <Button 
                 variant="ghost" 
                 size="sm"
                 onClick={() => router.push('/employees')}
+                className="h-8 w-8 p-0 sm:h-9 sm:w-auto sm:px-3"
               >
                 <ArrowLeft className="w-4 h-4" />
               </Button>
-              <h1 className="text-3xl font-bold">📄 Employee Report</h1>
+              <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold">📄 Employee Report</h1>
             </div>
-            <p className="text-muted-foreground ml-10">
+            <p className="text-xs sm:text-sm text-muted-foreground ml-0 sm:ml-10">
               {employee.first_name}{employee.last_name ? ` ${employee.last_name}` : ''} - {formatDate(startDate)} to {formatDate(endDate)}
             </p>
           </div>
@@ -698,60 +699,64 @@ export default function EmployeeReportPage() {
         {/* Filters and Actions */}
         <Card className="no-print">
           <CardContent className="pt-6">
-            <div className="flex flex-wrap gap-4">
-              <div className="flex items-center gap-2">
-                <Calendar className="w-4 h-4 text-muted-foreground" />
-                <input
-                  type="date"
-                  value={startDate}
-                  onChange={(e) => setStartDate(e.target.value)}
-                  className="px-3 py-2 border border-input rounded-md bg-background"
-                />
-                <span className="text-muted-foreground">to</span>
-                <input
-                  type="date"
-                  value={endDate}
-                  onChange={(e) => setEndDate(e.target.value)}
-                  className="px-3 py-2 border border-input rounded-md bg-background"
-                />
+            <div className="flex flex-col gap-3 sm:gap-4">
+              <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2">
+                <Calendar className="w-4 h-4 text-muted-foreground hidden sm:block" />
+                <div className="flex items-center gap-2 w-full sm:w-auto">
+                  <input
+                    type="date"
+                    value={startDate}
+                    onChange={(e) => setStartDate(e.target.value)}
+                    className="px-2 sm:px-3 py-2 text-xs sm:text-sm border border-input rounded-md bg-background flex-1 sm:flex-none"
+                  />
+                  <span className="text-xs sm:text-sm text-muted-foreground">to</span>
+                  <input
+                    type="date"
+                    value={endDate}
+                    onChange={(e) => setEndDate(e.target.value)}
+                    className="px-2 sm:px-3 py-2 text-xs sm:text-sm border border-input rounded-md bg-background flex-1 sm:flex-none"
+                  />
+                </div>
               </div>
-              
-              <div className="flex-1"></div>
 
-              <Button onClick={() => setShowAddWork(true)} variant="default">
-                <Briefcase className="w-4 h-4 mr-2" />
-                Add Work
-              </Button>
-              <Button onClick={() => setShowAddSalary(true)} variant="default">
-                <DollarSign className="w-4 h-4 mr-2" />
-                Add Salary
-              </Button>
-              <Button 
-                onClick={() => router.push(`/employees/${employeeId}/payslip`)}
-                variant="secondary"
-              >
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-4 h-4 mr-2">
-                  <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
-                  <polyline points="14 2 14 8 20 8" />
-                  <line x1="16" y1="13" x2="8" y2="13" />
-                  <line x1="16" y1="17" x2="8" y2="17" />
-                  <polyline points="10 9 9 9 8 9" />
-                </svg>
-                Payslip
-              </Button>
-              <Button onClick={handlePrint} variant="outline">
-                <Printer className="w-4 h-4 mr-2" />
-                Print
-              </Button>
+              <div className="grid grid-cols-2 sm:flex gap-2">
+                <Button onClick={() => setShowAddWork(true)} variant="default" size="sm" className="text-xs sm:text-sm">
+                  <Briefcase className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
+                  <span className="hidden sm:inline">Add </span>Work
+                </Button>
+                <Button onClick={() => setShowAddSalary(true)} variant="default" size="sm" className="text-xs sm:text-sm">
+                  <DollarSign className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
+                  <span className="hidden sm:inline">Add </span>Salary
+                </Button>
+                <Button 
+                  onClick={() => router.push(`/employees/${employeeId}/payslip`)}
+                  variant="secondary"
+                  size="sm"
+                  className="text-xs sm:text-sm"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2">
+                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                    <polyline points="14 2 14 8 20 8" />
+                    <line x1="16" y1="13" x2="8" y2="13" />
+                    <line x1="16" y1="17" x2="8" y2="17" />
+                    <polyline points="10 9 9 9 8 9" />
+                  </svg>
+                  Payslip
+                </Button>
+                <Button onClick={handlePrint} variant="outline" size="sm" className="text-xs sm:text-sm">
+                  <Printer className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
+                  Print
+                </Button>
+              </div>
             </div>
           </CardContent>
         </Card>
 
         {/* Summary Cards - Screen Only */}
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 no-print">
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3 sm:gap-4 no-print">
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Total Earned</CardTitle>
+              <CardTitle className="text-xs sm:text-sm font-medium">Total Earned</CardTitle>
               <TrendingUp className="h-4 w-4 text-green-600" />
             </CardHeader>
             <CardContent>
@@ -762,7 +767,7 @@ export default function EmployeeReportPage() {
 
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Salary Paid</CardTitle>
+              <CardTitle className="text-xs sm:text-sm font-medium">Salary Paid</CardTitle>
               <DollarSign className="h-4 w-4 text-blue-600" />
             </CardHeader>
             <CardContent>
@@ -773,7 +778,7 @@ export default function EmployeeReportPage() {
 
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Balance</CardTitle>
+              <CardTitle className="text-xs sm:text-sm font-medium">Balance</CardTitle>
               <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className={`h-4 w-4 ${balance < 0 ? 'text-red-600' : 'text-green-600'}`}>
                 <path d="M3 3v18h18" />
                 <path d="m19 9-5 5-4-4-3 3" />
@@ -798,38 +803,38 @@ export default function EmployeeReportPage() {
             <CardDescription>Detailed breakdown of work completed</CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="overflow-x-auto">
+            <div className="overflow-x-auto -mx-2 sm:mx-0">
               <div className="max-h-[500px] overflow-y-auto">
-                <table className="w-full">
+                <table className="w-full min-w-[700px]">
                   <thead className="sticky top-0 bg-background">
                     <tr className="border-b">
-                      <th className="text-left p-2 font-medium">Date</th>
-                      <th className="text-left p-2 font-medium">Description</th>
-                      <th className="text-center p-2 font-medium">Quantity</th>
-                      <th className="text-right p-2 font-medium">Price</th>
-                      <th className="text-right p-2 font-medium">Total</th>
-                      <th className="text-center p-2 font-medium">Action</th>
+                      <th className="text-left p-2 font-medium text-xs sm:text-sm whitespace-nowrap">Date</th>
+                      <th className="text-left p-2 font-medium text-xs sm:text-sm whitespace-nowrap">Description</th>
+                      <th className="text-center p-2 font-medium text-xs sm:text-sm whitespace-nowrap">Quantity</th>
+                      <th className="text-right p-2 font-medium text-xs sm:text-sm whitespace-nowrap">Price</th>
+                      <th className="text-right p-2 font-medium text-xs sm:text-sm whitespace-nowrap">Total</th>
+                      <th className="text-center p-2 font-medium text-xs sm:text-sm whitespace-nowrap">Action</th>
                     </tr>
                   </thead>
                   <tbody>
                     {filteredWorkRecords.length > 0 ? (
                       filteredWorkRecords.map((wr) => (
                         <tr key={wr.id} className="border-b hover:bg-muted/50">
-                          <td className="p-2 text-sm">{formatDate(wr.date)}</td>
-                          <td className="p-2">{wr.description}</td>
-                          <td className="p-2 text-center">{wr.quantity}</td>
-                          <td className="p-2 text-right">{formatCurrency(wr.price)}</td>
-                          <td className="p-2 text-right font-medium">{formatCurrency(wr.quantity * wr.price)}</td>
-                          <td className="p-2 text-center">
+                          <td className="p-2 text-xs sm:text-sm whitespace-nowrap">{formatDate(wr.date)}</td>
+                          <td className="p-2 text-xs sm:text-sm">{wr.description}</td>
+                          <td className="p-2 text-center text-xs sm:text-sm whitespace-nowrap">{wr.quantity}</td>
+                          <td className="p-2 text-right text-xs sm:text-sm whitespace-nowrap">{formatCurrency(wr.price)}</td>
+                          <td className="p-2 text-right font-medium text-xs sm:text-sm whitespace-nowrap">{formatCurrency(wr.quantity * wr.price)}</td>
+                          <td className="p-2 text-center whitespace-nowrap">
                             <div className="flex items-center justify-center gap-1">
                               <Button
                                 variant="ghost"
                                 size="sm"
                                 onClick={() => handleEditWork(wr)}
-                                className="h-8 w-8 p-0 text-blue-600 hover:text-blue-700 hover:bg-blue-50"
+                                className="h-7 w-7 sm:h-8 sm:w-8 p-0 text-blue-600 hover:text-blue-700 hover:bg-blue-50"
                                 title="Edit"
                               >
-                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="h-4 w-4">
+                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="h-3 w-3 sm:h-4 sm:w-4">
                                   <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
                                   <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
                                 </svg>
@@ -838,10 +843,10 @@ export default function EmployeeReportPage() {
                                 variant="ghost"
                                 size="sm"
                                 onClick={() => handleDeleteWork(wr.id)}
-                                className="h-8 w-8 p-0 text-destructive hover:text-destructive hover:bg-destructive/10"
+                                className="h-7 w-7 sm:h-8 sm:w-8 p-0 text-destructive hover:text-destructive hover:bg-destructive/10"
                                 title="Delete"
                               >
-                                <Trash2 className="h-4 w-4" />
+                                <Trash2 className="h-3 w-3 sm:h-4 sm:w-4" />
                               </Button>
                             </div>
                           </td>
@@ -876,34 +881,34 @@ export default function EmployeeReportPage() {
             <CardDescription>Payment history for this period</CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="overflow-x-auto">
+            <div className="overflow-x-auto -mx-2 sm:mx-0">
               <div className="max-h-[500px] overflow-y-auto">
-                <table className="w-full">
+                <table className="w-full min-w-[600px]">
                   <thead className="sticky top-0 bg-background">
                     <tr className="border-b">
-                      <th className="text-left p-2 font-medium">Date</th>
-                      <th className="text-left p-2 font-medium">Description</th>
-                      <th className="text-right p-2 font-medium">Amount</th>
-                      <th className="text-center p-2 font-medium">Action</th>
+                      <th className="text-left p-2 font-medium text-xs sm:text-sm whitespace-nowrap">Date</th>
+                      <th className="text-left p-2 font-medium text-xs sm:text-sm whitespace-nowrap">Description</th>
+                      <th className="text-right p-2 font-medium text-xs sm:text-sm whitespace-nowrap">Amount</th>
+                      <th className="text-center p-2 font-medium text-xs sm:text-sm whitespace-nowrap">Action</th>
                     </tr>
                   </thead>
                   <tbody>
                     {filteredSalaryPayments.length > 0 ? (
                       filteredSalaryPayments.map((sp) => (
                         <tr key={sp.id} className="border-b hover:bg-muted/50">
-                          <td className="p-2 text-sm">{formatDate(sp.payment_date)}</td>
-                          <td className="p-2 text-sm text-muted-foreground">{sp.notes || '-'}</td>
-                          <td className="p-2 text-right font-medium">{formatCurrency(sp.amount)}</td>
-                          <td className="p-2 text-center">
+                          <td className="p-2 text-xs sm:text-sm whitespace-nowrap">{formatDate(sp.payment_date)}</td>
+                          <td className="p-2 text-xs sm:text-sm text-muted-foreground">{sp.notes || '-'}</td>
+                          <td className="p-2 text-right font-medium text-xs sm:text-sm whitespace-nowrap">{formatCurrency(sp.amount)}</td>
+                          <td className="p-2 text-center whitespace-nowrap">
                             <div className="flex items-center justify-center gap-1">
                               <Button
                                 variant="ghost"
                                 size="sm"
                                 onClick={() => handleEditSalary(sp)}
-                                className="h-8 w-8 p-0 text-blue-600 hover:text-blue-700 hover:bg-blue-50"
+                                className="h-7 w-7 sm:h-8 sm:w-8 p-0 text-blue-600 hover:text-blue-700 hover:bg-blue-50"
                                 title="Edit"
                               >
-                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="h-4 w-4">
+                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="h-3 w-3 sm:h-4 sm:w-4">
                                   <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
                                   <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
                                 </svg>
@@ -912,10 +917,10 @@ export default function EmployeeReportPage() {
                                 variant="ghost"
                                 size="sm"
                                 onClick={() => handleDeleteSalary(sp.id)}
-                                className="h-8 w-8 p-0 text-destructive hover:text-destructive hover:bg-destructive/10"
+                                className="h-7 w-7 sm:h-8 sm:w-8 p-0 text-destructive hover:text-destructive hover:bg-destructive/10"
                                 title="Delete"
                               >
-                                <Trash2 className="h-4 w-4" />
+                                <Trash2 className="h-3 w-3 sm:h-4 sm:w-4" />
                               </Button>
                             </div>
                           </td>
@@ -932,9 +937,9 @@ export default function EmployeeReportPage() {
                 </table>
               </div>
               <div className="border-t bg-muted/50 p-2 flex justify-between items-center font-bold sticky bottom-0">
-                <span className="text-right flex-1">Total Paid:</span>
-                <span className="text-right text-blue-600 ml-4">{formatCurrency(totalSalary)}</span>
-                <span className="w-16"></span>
+                <span className="text-right flex-1 text-xs sm:text-sm">Total Paid:</span>
+                <span className="text-right text-blue-600 ml-4 text-xs sm:text-sm">{formatCurrency(totalSalary)}</span>
+                <span className="w-12 sm:w-16"></span>
               </div>
             </div>
           </CardContent>
@@ -943,10 +948,10 @@ export default function EmployeeReportPage() {
 
       {/* Add Work Dialog */}
       <Dialog open={showAddWork} onOpenChange={setShowAddWork}>
-        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+        <DialogContent className="max-w-4xl w-[95vw] sm:w-full max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>🛠️ Add Work Records</DialogTitle>
-            <DialogDescription>
+            <DialogTitle className="text-base sm:text-lg">🛠️ Add Work Records</DialogTitle>
+            <DialogDescription className="text-xs sm:text-sm">
               Record work completed by {employee.first_name}{employee.last_name ? ` ${employee.last_name}` : ''}
             </DialogDescription>
           </DialogHeader>

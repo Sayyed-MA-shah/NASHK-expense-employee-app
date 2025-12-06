@@ -67,17 +67,17 @@ export default function Dashboard() {
     <DashboardLayout>
       <div className="space-y-6">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Dashboard</h1>
-          <p className="text-muted-foreground">
+          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">Dashboard</h1>
+          <p className="text-sm sm:text-base text-muted-foreground">
             Welcome to your business dashboard! Here's what's happening with your business today.
           </p>
         </div>
 
         {/* Stats Grid */}
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4 sm:gap-4">
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">
+              <CardTitle className="text-xs sm:text-sm font-medium">
                 Total PayIn
               </CardTitle>
               <svg
@@ -95,9 +95,9 @@ export default function Dashboard() {
             </CardHeader>
             <CardContent>
               {loading ? (
-                <div className="text-2xl font-bold text-muted-foreground">Loading...</div>
+                <div className="text-xl sm:text-2xl font-bold text-muted-foreground">Loading...</div>
               ) : (
-                <div className="text-2xl font-bold text-green-600">{formatCurrency(stats.totalPayin)}</div>
+                <div className="text-xl sm:text-2xl font-bold text-green-600">{formatCurrency(stats.totalPayin)}</div>
               )}
               <p className="text-xs text-muted-foreground">
                 Total incoming payments
@@ -107,7 +107,7 @@ export default function Dashboard() {
 
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">
+              <CardTitle className="text-xs sm:text-sm font-medium">
                 Total PayOut
               </CardTitle>
               <svg
@@ -126,9 +126,9 @@ export default function Dashboard() {
             </CardHeader>
             <CardContent>
               {loading ? (
-                <div className="text-2xl font-bold text-muted-foreground">Loading...</div>
+                <div className="text-xl sm:text-2xl font-bold text-muted-foreground">Loading...</div>
               ) : (
-                <div className="text-2xl font-bold text-red-600">{formatCurrency(stats.totalPayout)}</div>
+                <div className="text-xl sm:text-2xl font-bold text-red-600">{formatCurrency(stats.totalPayout)}</div>
               )}
               <p className="text-xs text-muted-foreground">
                 Total outgoing payments
@@ -138,7 +138,7 @@ export default function Dashboard() {
 
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">
+              <CardTitle className="text-xs sm:text-sm font-medium">
                 Total Expenses
               </CardTitle>
               <svg
@@ -158,9 +158,9 @@ export default function Dashboard() {
             </CardHeader>
             <CardContent>
               {loading ? (
-                <div className="text-2xl font-bold text-muted-foreground">Loading...</div>
+                <div className="text-xl sm:text-2xl font-bold text-muted-foreground">Loading...</div>
               ) : (
-                <div className="text-2xl font-bold">{formatCurrency(stats.totalExpenses)}</div>
+                <div className="text-xl sm:text-2xl font-bold">{formatCurrency(stats.totalExpenses)}</div>
               )}
               <p className="text-xs text-muted-foreground">
                 All submitted expenses
@@ -170,7 +170,7 @@ export default function Dashboard() {
 
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">
+              <CardTitle className="text-xs sm:text-sm font-medium">
                 Balance
               </CardTitle>
               <svg
@@ -189,9 +189,9 @@ export default function Dashboard() {
             </CardHeader>
             <CardContent>
               {loading ? (
-                <div className="text-2xl font-bold text-muted-foreground">Loading...</div>
+                <div className="text-xl sm:text-2xl font-bold text-muted-foreground">Loading...</div>
               ) : (
-                <div className={`text-2xl font-bold ${stats.balance >= 0 ? 'text-blue-600' : 'text-red-600'}`}>{formatCurrency(stats.balance)}</div>
+                <div className={`text-xl sm:text-2xl font-bold ${stats.balance >= 0 ? 'text-blue-600' : 'text-red-600'}`}>{formatCurrency(stats.balance)}</div>
               )}
               <p className="text-xs text-muted-foreground">
                 PayIn - PayOut - Expenses
@@ -201,8 +201,8 @@ export default function Dashboard() {
         </div>
 
         {/* Recent Transactions */}
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
-          <Card className="col-span-4">
+        <div className="grid grid-cols-1 gap-4 lg:grid-cols-7">
+          <Card className="lg:col-span-4">
             <CardHeader>
               <CardTitle>Recent Transactions</CardTitle>
               <CardDescription>
@@ -232,7 +232,7 @@ export default function Dashboard() {
             </CardContent>
           </Card>
 
-          <Card className="col-span-3">
+          <Card className="lg:col-span-3">
             <CardHeader>
               <CardTitle>Quick Actions</CardTitle>
               <CardDescription>

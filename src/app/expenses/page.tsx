@@ -48,8 +48,8 @@ export default function ExpensesPage() {
   const [expenseRows, setExpenseRows] = useState<ExpenseRow[]>([
     {
       id: '1',
-      date: '',
-      category: 'setup_purchase',
+      date: new Date().toISOString().split('T')[0],
+      category: 'material',
       amount: '',
       description: ''
     }
@@ -62,7 +62,7 @@ export default function ExpensesPage() {
   const [expenseToEdit, setExpenseToEdit] = useState<any>(null)
   const [editForm, setEditForm] = useState({
     date: '',
-    category: 'setup_purchase' as ExpenseCategory,
+    category: 'material' as ExpenseCategory,
     amount: '',
     description: ''
   })
@@ -185,7 +185,7 @@ export default function ExpensesPage() {
     const newRow: ExpenseRow = {
       id: Date.now().toString(),
       date: new Date().toISOString().split('T')[0],
-      category: 'setup_purchase',
+      category: 'material',
       amount: '',
       description: ''
     }

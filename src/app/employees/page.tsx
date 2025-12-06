@@ -252,10 +252,10 @@ export default function EmployeesPage() {
         </div>
 
         {/* Stats Grid */}
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4 sm:gap-4">
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">
+              <CardTitle className="text-xs sm:text-sm font-medium">
                 {activeTab === 'contractual' ? 'Total Earned' : 'Total Salaries'}
               </CardTitle>
               <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="h-4 w-4 text-green-600">
@@ -263,7 +263,7 @@ export default function EmployeesPage() {
               </svg>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-green-600">{formatCurrency(totalEarned)}</div>
+              <div className="text-xl sm:text-2xl font-bold text-green-600">{formatCurrency(totalEarned)}</div>
               <p className="text-xs text-muted-foreground">
                 {activeTab === 'contractual' ? 'Total work earnings' : 'Monthly salaries + overtime'}
               </p>
@@ -275,40 +275,40 @@ export default function EmployeesPage() {
 
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Temp Paid Salary</CardTitle>
+              <CardTitle className="text-xs sm:text-sm font-medium">Temp Paid Salary</CardTitle>
               <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="h-4 w-4 text-blue-600">
                 <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
               </svg>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-blue-600">{formatCurrency(tempPaidSalary)}</div>
+              <div className="text-xl sm:text-2xl font-bold text-blue-600">{formatCurrency(tempPaidSalary)}</div>
               <p className="text-xs text-muted-foreground">Total salary paid</p>
             </CardContent>
           </Card>
 
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Due Salary Total</CardTitle>
+              <CardTitle className="text-xs sm:text-sm font-medium">Due Salary Total</CardTitle>
               <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="h-4 w-4 text-orange-600">
                 <path d="M3 3v18h18" />
                 <path d="m19 9-5 5-4-4-3 3" />
               </svg>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-orange-600">{formatCurrency(dueSalaryTotal)}</div>
+              <div className="text-xl sm:text-2xl font-bold text-orange-600">{formatCurrency(dueSalaryTotal)}</div>
               <p className="text-xs text-muted-foreground">Outstanding balance</p>
             </CardContent>
           </Card>
 
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Total Advance Paid</CardTitle>
+              <CardTitle className="text-xs sm:text-sm font-medium">Total Advance Paid</CardTitle>
               <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="h-4 w-4 text-red-600">
                 <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
               </svg>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-red-600">{formatCurrency(totalAdvancePaid)}</div>
+              <div className="text-xl sm:text-2xl font-bold text-red-600">{formatCurrency(totalAdvancePaid)}</div>
               <p className="text-xs text-muted-foreground">Overpaid salaries</p>
             </CardContent>
           </Card>
@@ -347,7 +347,7 @@ export default function EmployeesPage() {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="flex gap-4">
+            <div className="flex flex-col sm:flex-row gap-2 sm:gap-4">
               <div className="relative flex-1">
                 <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
                 <input
@@ -380,56 +380,56 @@ export default function EmployeesPage() {
         ) : activeEmployees.length > 0 ? (
           <Card>
             <CardContent className="pt-6">
-              <div className="overflow-x-auto">
-                <table className="w-full">
+              <div className="overflow-x-auto -mx-2 sm:mx-0">
+                <table className="w-full min-w-[800px]">
                   <thead>
                     <tr className="border-b">
-                      <th className="text-left p-2 font-medium">Name</th>
-                      <th className="text-left p-2 font-medium">Phone</th>
-                      <th className="text-left p-2 font-medium">Job Role</th>
-                      <th className="text-left p-2 font-medium">{activeTab === 'fixed' ? 'Monthly Salary' : 'Total Earned'}</th>
-                      <th className="text-left p-2 font-medium">Total Paid</th>
-                      <th className="text-left p-2 font-medium">Balance</th>
-                      <th className="text-left p-2 font-medium">Actions</th>
+                      <th className="text-left p-2 font-medium text-xs sm:text-sm whitespace-nowrap">Name</th>
+                      <th className="text-left p-2 font-medium text-xs sm:text-sm whitespace-nowrap">Phone</th>
+                      <th className="text-left p-2 font-medium text-xs sm:text-sm whitespace-nowrap">Job Role</th>
+                      <th className="text-left p-2 font-medium text-xs sm:text-sm whitespace-nowrap">{activeTab === 'fixed' ? 'Monthly Salary' : 'Total Earned'}</th>
+                      <th className="text-left p-2 font-medium text-xs sm:text-sm whitespace-nowrap">Total Paid</th>
+                      <th className="text-left p-2 font-medium text-xs sm:text-sm whitespace-nowrap">Balance</th>
+                      <th className="text-left p-2 font-medium text-xs sm:text-sm whitespace-nowrap">Actions</th>
                     </tr>
                   </thead>
                   <tbody>
                     {activeEmployees.map((employee) => (
                       <tr key={employee.id} className="border-b hover:bg-muted/50">
-                        <td className="p-2 font-medium">
+                        <td className="p-2 font-medium whitespace-nowrap">
                           <button
                             onClick={() => router.push(employee.type === 'fixed' ? `/employees/fixed/${employee.id}` : `/employees/${employee.id}`)}
-                            className="text-blue-600 hover:text-blue-800 hover:underline cursor-pointer"
+                            className="text-blue-600 hover:text-blue-800 hover:underline cursor-pointer text-xs sm:text-sm"
                           >
                             {employee.first_name}{employee.last_name ? ` ${employee.last_name}` : ''}
                           </button>
                         </td>
-                        <td className="p-2 text-sm">{employee.phone}</td>
-                        <td className="p-2 text-sm capitalize">{employee.role}</td>
-                        <td className="p-2 font-medium">
+                        <td className="p-2 text-xs sm:text-sm whitespace-nowrap">{employee.phone}</td>
+                        <td className="p-2 text-xs sm:text-sm capitalize whitespace-nowrap">{employee.role}</td>
+                        <td className="p-2 font-medium text-xs sm:text-sm whitespace-nowrap">
                           {formatCurrency(employee.type === 'fixed' ? (employee.monthly_salary || 0) : (employee.total_earned || 0))}
                         </td>
-                        <td className="p-2 font-medium text-red-600">{formatCurrency(employee.advance_paid || 0)}</td>
-                        <td className={`p-2 font-medium ${(employee.balance || 0) < 0 ? 'text-red-600' : 'text-green-600'}`}>
+                        <td className="p-2 font-medium text-red-600 text-xs sm:text-sm whitespace-nowrap">{formatCurrency(employee.advance_paid || 0)}</td>
+                        <td className={`p-2 font-medium text-xs sm:text-sm whitespace-nowrap ${(employee.balance || 0) < 0 ? 'text-red-600' : 'text-green-600'}`}>
                           {formatCurrency(employee.balance || 0)}
                         </td>
-                        <td className="p-2">
+                        <td className="p-2 whitespace-nowrap">
                           <div className="flex items-center gap-1">
                             <Button 
                               variant="ghost" 
                               size="sm"
                               onClick={() => handleEditEmployee(employee)}
-                              className="h-8 w-8 p-0"
+                              className="h-7 w-7 sm:h-8 sm:w-8 p-0"
                             >
-                              <Pencil className="h-4 w-4" />
+                              <Pencil className="h-3 w-3 sm:h-4 sm:w-4" />
                             </Button>
                             <Button 
                               variant="ghost" 
                               size="sm"
                               onClick={() => handleDeleteEmployee(employee.id)}
-                              className="h-8 w-8 p-0 text-destructive hover:text-destructive hover:bg-destructive/10"
+                              className="h-7 w-7 sm:h-8 sm:w-8 p-0 text-destructive hover:text-destructive hover:bg-destructive/10"
                             >
-                              <Trash2 className="h-4 w-4" />
+                              <Trash2 className="h-3 w-3 sm:h-4 sm:w-4" />
                             </Button>
                           </div>
                         </td>
@@ -461,10 +461,10 @@ export default function EmployeesPage() {
 
       {/* Add Employee Dialog */}
       <Dialog open={showAddForm} onOpenChange={setShowAddForm}>
-        <DialogContent className="max-w-md">
+        <DialogContent className="max-w-md w-[95vw] sm:w-full max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>👤 Add New Employee</DialogTitle>
-            <DialogDescription>
+            <DialogTitle className="text-lg sm:text-xl">👤 Add New Employee</DialogTitle>
+            <DialogDescription className="text-xs sm:text-sm">
               Add a new {activeTab === 'contractual' ? 'contractual (temp)' : 'fixed salary'} employee
             </DialogDescription>
           </DialogHeader>
@@ -536,10 +536,10 @@ export default function EmployeesPage() {
 
       {/* Edit Employee Dialog */}
       <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
-        <DialogContent className="max-w-md">
+        <DialogContent className="max-w-md w-[95vw] sm:w-full max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>Edit Employee</DialogTitle>
-            <DialogDescription>
+            <DialogTitle className="text-lg sm:text-xl">Edit Employee</DialogTitle>
+            <DialogDescription className="text-xs sm:text-sm">
               Update employee information
             </DialogDescription>
           </DialogHeader>
@@ -594,13 +594,13 @@ export default function EmployeesPage() {
 
       {/* Delete Confirmation Dialog */}
       <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
-        <DialogContent>
+        <DialogContent className="w-[95vw] sm:w-full max-w-md">
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <AlertTriangle className="h-5 w-5 text-destructive" />
+            <DialogTitle className="flex items-center gap-2 text-base sm:text-lg">
+              <AlertTriangle className="h-4 w-4 sm:h-5 sm:w-5 text-destructive" />
               Delete Employee
             </DialogTitle>
-            <DialogDescription>
+            <DialogDescription className="text-xs sm:text-sm">
               Are you sure you want to delete this employee? This action cannot be undone.
             </DialogDescription>
           </DialogHeader>

@@ -4,6 +4,7 @@ import React, { useState } from 'react'
 import Header from './header'
 import Sidebar from './sidebar'
 import { cn } from '@/lib/utils'
+import { useAuth } from '@/hooks/useAuth'
 
 interface DashboardLayoutProps {
   children: React.ReactNode
@@ -12,6 +13,7 @@ interface DashboardLayoutProps {
 
 export default function DashboardLayout({ children, className }: DashboardLayoutProps) {
   const [sidebarOpen, setSidebarOpen] = useState(false)
+  const { isAuthenticated, isLoading } = useAuth()
 
   const toggleSidebar = () => {
     setSidebarOpen(!sidebarOpen)
@@ -19,6 +21,23 @@ export default function DashboardLayout({ children, className }: DashboardLayout
 
   const closeSidebar = () => {
     setSidebarOpen(false)
+  }
+
+  // Show loading state while checking authentication
+  if (isLoading) {
+    return (
+      <div className="flex h-screen items-center justify-center bg-background">
+        <div className="text-center">
+          <div className="inline-block w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin mb-4" />
+          <p className="text-muted-foreground">Loading...</p>
+        </div>
+      </div>
+    )
+  }
+
+  // Don't render layout if not authenticated (will redirect to login)
+  if (!isAuthenticated) {
+    return null
   }
 
   return (

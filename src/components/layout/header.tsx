@@ -1,10 +1,11 @@
 "use client"
 
-import React from 'react'
+import React, { useState } from 'react'
 import { useTheme } from 'next-themes'
 import { Button } from '@/components/ui/button'
-import { Moon, Sun, Bell, Search, User, Menu } from 'lucide-react'
+import { Moon, Sun, Bell, Search, User, Menu, LogOut, Settings } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { useAuth } from '@/hooks/useAuth'
 
 interface HeaderProps {
   onMenuClick?: () => void
@@ -13,9 +14,16 @@ interface HeaderProps {
 
 export default function Header({ onMenuClick, className }: HeaderProps) {
   const { theme, setTheme } = useTheme()
+  const { username, logout } = useAuth()
+  const [showUserMenu, setShowUserMenu] = useState(false)
 
   const toggleTheme = () => {
     setTheme(theme === 'dark' ? 'light' : 'dark')
+  }
+
+  const handleLogout = () => {
+    setShowUserMenu(false)
+    logout()
   }
 
   return (
@@ -72,9 +80,51 @@ export default function Header({ onMenuClick, className }: HeaderProps) {
             )}
           </Button>
           
-          <Button variant="ghost" size="icon">
-            <User className="h-5 w-5" />
-          </Button>
+          {/* User Menu */}
+          <div className="relative">
+            <Button 
+              variant="ghost" 
+              size="icon"
+              onClick={() => setShowUserMenu(!showUserMenu)}
+              className="relative"
+            >
+              <User className="h-5 w-5" />
+            </Button>
+            
+            {showUserMenu && (
+              <>
+                <div 
+                  className="fixed inset-0 z-40" 
+                  onClick={() => setShowUserMenu(false)}
+                />
+                <div className="absolute right-0 mt-2 w-56 bg-background border rounded-lg shadow-lg z-50 overflow-hidden">
+                  <div className="px-4 py-3 border-b bg-muted/50">
+                    <p className="text-sm font-medium">Signed in as</p>
+                    <p className="text-sm text-muted-foreground truncate">{username || 'User'}</p>
+                  </div>
+                  <div className="py-1">
+                    <button
+                      onClick={() => {
+                        setShowUserMenu(false)
+                        // Add settings navigation here if needed
+                      }}
+                      className="w-full px-4 py-2 text-sm text-left hover:bg-muted/50 flex items-center gap-2"
+                    >
+                      <Settings className="h-4 w-4" />
+                      Settings
+                    </button>
+                    <button
+                      onClick={handleLogout}
+                      className="w-full px-4 py-2 text-sm text-left hover:bg-muted/50 flex items-center gap-2 text-red-600 dark:text-red-400"
+                    >
+                      <LogOut className="h-4 w-4" />
+                      Logout
+                    </button>
+                  </div>
+                </div>
+              </>
+            )}
+          </div>
         </div>
       </div>
     </header>

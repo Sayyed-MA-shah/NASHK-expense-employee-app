@@ -11,7 +11,7 @@ import { MessageSquare, CheckCircle, XCircle, TestTube, RefreshCw } from 'lucide
 
 export default function SMSLogsPage() {
   const { toasts, toast, removeToast } = useToast()
-  const { formatDate, formatDateTime } = useDateFormat()
+  const { formatDate } = useDateFormat()
   const [loading, setLoading] = useState(true)
   const [logs, setLogs] = useState<any[]>([])
   const [filter, setFilter] = useState<'all' | 'sent' | 'failed' | 'test'>('all')
@@ -153,7 +153,7 @@ export default function SMSLogsPage() {
                           </div>
                         </td>
                         <td className="p-3 text-sm">
-                          {formatDateTime(log.created_at)}
+                          {formatDate(log.created_at)}
                         </td>
                         <td className="p-3 text-sm">
                           {log.employees ? 

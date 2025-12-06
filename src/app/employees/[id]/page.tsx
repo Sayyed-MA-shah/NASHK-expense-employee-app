@@ -713,14 +713,18 @@ export default function EmployeeReportPage() {
                     type="date"
                     value={startDate}
                     onChange={(e) => setStartDate(e.target.value)}
-                    className="px-2 sm:px-3 py-2 text-xs sm:text-sm border border-input rounded-md bg-background flex-1 sm:flex-none"
+                    onKeyDown={(e) => e.preventDefault()}
+                    className="px-2 sm:px-3 py-2 text-xs sm:text-sm border border-input rounded-md bg-background flex-1 sm:flex-none cursor-pointer"
+                    placeholder="Select start date"
                   />
                   <span className="text-xs sm:text-sm text-muted-foreground">to</span>
                   <input
                     type="date"
                     value={endDate}
                     onChange={(e) => setEndDate(e.target.value)}
-                    className="px-2 sm:px-3 py-2 text-xs sm:text-sm border border-input rounded-md bg-background flex-1 sm:flex-none"
+                    onKeyDown={(e) => e.preventDefault()}
+                    className="px-2 sm:px-3 py-2 text-xs sm:text-sm border border-input rounded-md bg-background flex-1 sm:flex-none cursor-pointer"
+                    placeholder="Select end date"
                   />
                 </div>
               </div>

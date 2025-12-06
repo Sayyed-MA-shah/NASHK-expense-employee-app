@@ -223,6 +223,8 @@ export default function EmployeeReportPage() {
     }
 
     try {
+      const oldBalance = balance
+      
       // Create all work records
       const promises = validItems.map(item => {
         const quantity = item.quantity ? parseFloat(item.quantity) : 1
@@ -243,6 +245,47 @@ export default function EmployeeReportPage() {
 
       toast.success('Work Added', `${validItems.length} work record(s) added successfully`)
       await loadData()
+
+      // Calculate new balance and check if it went negative
+      const totalWorkAdded = validItems.reduce((sum, item) => {
+        const quantity = item.quantity ? parseFloat(item.quantity) : 1
+        const price = parseFloat(item.price)
+        const total = item.quantity ? (quantity * price) : price
+        return sum + total
+      }, 0)
+      
+      const newBalance = oldBalance + totalWorkAdded
+
+      // Send SMS notification if balance went negative or increased significantly
+      if (employee?.phone) {
+        try {
+          let message = ''
+          
+          if (newBalance < 0 && oldBalance >= 0) {
+            // Balance just went negative
+            message = `⚠️ Your balance is now negative: ${formatCurrency(newBalance)}. Please contact administration for payment.`
+          } else if (Math.abs(newBalance) > 10000 && newBalance < 0) {
+            // Large negative balance
+            message = `⚠️ Outstanding balance: ${formatCurrency(newBalance)}. Total work done: ${formatCurrency(lifetimeTotalWork + totalWorkAdded)}. Please clear your dues.`
+          }
+          
+          if (message) {
+            await fetch('/api/sms/send', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                phone: employee.phone,
+                message,
+                messageType: 'balance_alert',
+              }),
+            })
+          }
+        } catch (smsError) {
+          console.error('SMS notification failed:', smsError)
+          // Don't show error to user - work was added successfully
+        }
+      }
+
       setShowAddWork(false)
       setWorkForm({
         date: new Date().toISOString().split('T')[0],
@@ -261,15 +304,38 @@ export default function EmployeeReportPage() {
     }
 
     try {
+      const paymentAmount = parseFloat(salaryForm.amount)
+      
       await createSalaryPayment({
         employee_id: employeeId,
         payment_date: salaryForm.date,
-        amount: parseFloat(salaryForm.amount),
+        amount: paymentAmount,
         notes: salaryForm.description || null
       })
 
       toast.success('Salary Added', 'Salary payment has been recorded successfully')
       await loadData()
+
+      // Send SMS notification if employee has phone number
+      if (employee?.phone) {
+        try {
+          const newBalance = balance - paymentAmount // Calculate new balance after payment
+          
+          await fetch('/api/sms/send', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              phone: employee.phone,
+              message: `Payment Received: ${formatCurrency(paymentAmount)} has been credited to your account on ${formatDate(salaryForm.date)}. New balance: ${formatCurrency(newBalance)}`,
+              messageType: 'salary_payment',
+            }),
+          })
+        } catch (smsError) {
+          console.error('SMS notification failed:', smsError)
+          // Don't show error to user - payment was successful
+        }
+      }
+
       setShowAddSalary(false)
       setSalaryForm({
         date: new Date().toISOString().split('T')[0],

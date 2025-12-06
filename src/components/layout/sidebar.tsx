@@ -9,7 +9,8 @@ import {
   CreditCard, 
   Receipt, 
   Users, 
-  Settings, 
+  Settings,
+  MessageSquare,
   X 
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
@@ -44,6 +45,12 @@ const navigationItems: NavItem[] = [
     label: 'Employees',
     href: '/employees',
     icon: Users,
+  },
+  {
+    id: 'sms',
+    label: 'SMS',
+    href: '/sms-settings',
+    icon: MessageSquare,
   },
   {
     id: 'settings',

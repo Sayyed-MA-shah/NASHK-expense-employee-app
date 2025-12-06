@@ -56,6 +56,12 @@ export default function EmployeeReportPage() {
     return new Date().toISOString().split('T')[0]
   })
 
+  // Date picker dialogs
+  const [showStartDatePicker, setShowStartDatePicker] = useState(false)
+  const [showEndDatePicker, setShowEndDatePicker] = useState(false)
+  const [tempStartDate, setTempStartDate] = useState(startDate)
+  const [tempEndDate, setTempEndDate] = useState(endDate)
+
   // Dialog states
   const [showAddWork, setShowAddWork] = useState(false)
   const [showAddSalary, setShowAddSalary] = useState(false)
@@ -140,6 +146,48 @@ export default function EmployeeReportPage() {
   )
   const lifetimeTotalSalary = salaryPayments.reduce((sum, sp) => sum + sp.amount, 0)
   const balance = lifetimeTotalWork - lifetimeTotalSalary
+
+  // Date picker functions
+  function getDaysInMonth(year: number, month: number) {
+    return new Date(year, month + 1, 0).getDate()
+  }
+
+  function generateCalendarDays(dateStr: string) {
+    const date = new Date(dateStr)
+    const year = date.getFullYear()
+    const month = date.getMonth()
+    const firstDay = new Date(year, month, 1).getDay()
+    const daysInMonth = getDaysInMonth(year, month)
+    
+    const days: (number | null)[] = []
+    for (let i = 0; i < firstDay; i++) {
+      days.push(null)
+    }
+    for (let i = 1; i <= daysInMonth; i++) {
+      days.push(i)
+    }
+    return days
+  }
+
+  function handleStartDateSelect(day: number) {
+    const [year, month] = tempStartDate.split('-')
+    const newDate = `${year}-${month}-${String(day).padStart(2, '0')}`
+    setStartDate(newDate)
+    setShowStartDatePicker(false)
+  }
+
+  function handleEndDateSelect(day: number) {
+    const [year, month] = tempEndDate.split('-')
+    const newDate = `${year}-${month}-${String(day).padStart(2, '0')}`
+    setEndDate(newDate)
+    setShowEndDatePicker(false)
+  }
+
+  function changeMonth(dateStr: string, delta: number, setter: (date: string) => void) {
+    const date = new Date(dateStr)
+    date.setMonth(date.getMonth() + delta)
+    setter(date.toISOString().split('T')[0])
+  }
 
   function addWorkRow() {
     setWorkForm({
@@ -709,23 +757,29 @@ export default function EmployeeReportPage() {
               <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2">
                 <Calendar className="w-4 h-4 text-muted-foreground hidden sm:block" />
                 <div className="flex items-center gap-2 w-full sm:w-auto">
-                  <input
-                    type="date"
-                    value={startDate}
-                    onChange={(e) => setStartDate(e.target.value)}
-                    onKeyDown={(e) => e.preventDefault()}
-                    className="px-2 sm:px-3 py-2 text-xs sm:text-sm border border-input rounded-md bg-background flex-1 sm:flex-none cursor-pointer"
-                    placeholder="Select start date"
-                  />
+                  <Button
+                    variant="outline"
+                    onClick={() => {
+                      setTempStartDate(startDate)
+                      setShowStartDatePicker(true)
+                    }}
+                    className="px-2 sm:px-3 py-2 text-xs sm:text-sm h-auto flex-1 sm:flex-none justify-start"
+                  >
+                    <Calendar className="w-3 h-3 mr-2" />
+                    {formatDate(startDate)}
+                  </Button>
                   <span className="text-xs sm:text-sm text-muted-foreground">to</span>
-                  <input
-                    type="date"
-                    value={endDate}
-                    onChange={(e) => setEndDate(e.target.value)}
-                    onKeyDown={(e) => e.preventDefault()}
-                    className="px-2 sm:px-3 py-2 text-xs sm:text-sm border border-input rounded-md bg-background flex-1 sm:flex-none cursor-pointer"
-                    placeholder="Select end date"
-                  />
+                  <Button
+                    variant="outline"
+                    onClick={() => {
+                      setTempEndDate(endDate)
+                      setShowEndDatePicker(true)
+                    }}
+                    className="px-2 sm:px-3 py-2 text-xs sm:text-sm h-auto flex-1 sm:flex-none justify-start"
+                  >
+                    <Calendar className="w-3 h-3 mr-2" />
+                    {formatDate(endDate)}
+                  </Button>
                 </div>
               </div>
 
@@ -1350,6 +1404,132 @@ export default function EmployeeReportPage() {
               Delete
             </Button>
           </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Start Date Picker Dialog */}
+      <Dialog open={showStartDatePicker} onOpenChange={setShowStartDatePicker}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Select Start Date</DialogTitle>
+            <DialogDescription>
+              Choose a specific date for the start of the period
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            {/* Month/Year Navigation */}
+            <div className="flex items-center justify-between">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => changeMonth(tempStartDate, -1, setTempStartDate)}
+              >
+                ←
+              </Button>
+              <div className="font-medium">
+                {new Date(tempStartDate).toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
+              </div>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => changeMonth(tempStartDate, 1, setTempStartDate)}
+              >
+                →
+              </Button>
+            </div>
+
+            {/* Calendar Grid */}
+            <div className="grid grid-cols-7 gap-1">
+              {['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'].map(day => (
+                <div key={day} className="text-center text-xs font-medium text-muted-foreground p-2">
+                  {day}
+                </div>
+              ))}
+              {generateCalendarDays(tempStartDate).map((day, index) => (
+                <div key={index} className="aspect-square">
+                  {day ? (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => handleStartDateSelect(day)}
+                      className={`w-full h-full ${
+                        startDate === `${tempStartDate.slice(0, 8)}${String(day).padStart(2, '0')}`
+                          ? 'bg-primary text-primary-foreground hover:bg-primary/90'
+                          : ''
+                      }`}
+                    >
+                      {day}
+                    </Button>
+                  ) : (
+                    <div />
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* End Date Picker Dialog */}
+      <Dialog open={showEndDatePicker} onOpenChange={setShowEndDatePicker}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Select End Date</DialogTitle>
+            <DialogDescription>
+              Choose a specific date for the end of the period
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            {/* Month/Year Navigation */}
+            <div className="flex items-center justify-between">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => changeMonth(tempEndDate, -1, setTempEndDate)}
+              >
+                ←
+              </Button>
+              <div className="font-medium">
+                {new Date(tempEndDate).toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
+              </div>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => changeMonth(tempEndDate, 1, setTempEndDate)}
+              >
+                →
+              </Button>
+            </div>
+
+            {/* Calendar Grid */}
+            <div className="grid grid-cols-7 gap-1">
+              {['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'].map(day => (
+                <div key={day} className="text-center text-xs font-medium text-muted-foreground p-2">
+                  {day}
+                </div>
+              ))}
+              {generateCalendarDays(tempEndDate).map((day, index) => (
+                <div key={index} className="aspect-square">
+                  {day ? (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => handleEndDateSelect(day)}
+                      className={`w-full h-full ${
+                        endDate === `${tempEndDate.slice(0, 8)}${String(day).padStart(2, '0')}`
+                          ? 'bg-primary text-primary-foreground hover:bg-primary/90'
+                          : ''
+                      }`}
+                    >
+                      {day}
+                    </Button>
+                  ) : (
+                    <div />
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
         </DialogContent>
       </Dialog>
 

@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import DashboardLayout from '@/components/layout/dashboard-layout'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -45,6 +45,7 @@ export default function ExpensesPage() {
   const [activeTab, setActiveTab] = useState<ExpenseCategory | 'all'>('all')
   const [dateRange, setDateRange] = useState({ start: '', end: '' })
   const [showAddForm, setShowAddForm] = useState(false)
+  const dateInputRefs = useRef<{ [key: string]: HTMLInputElement | null }>({})
   const [expenseRows, setExpenseRows] = useState<ExpenseRow[]>([
     {
       id: '1',
@@ -190,6 +191,14 @@ export default function ExpensesPage() {
       description: ''
     }
     setExpenseRows([...expenseRows, newRow])
+    
+    // Focus on the date field of the new row after state update
+    setTimeout(() => {
+      const dateInput = dateInputRefs.current[newRow.id]
+      if (dateInput) {
+        dateInput.focus()
+      }
+    }, 0)
   }
 
   const removeExpenseRow = (id: string) => {
@@ -636,6 +645,7 @@ export default function ExpensesPage() {
                         <tr key={row.id} className="border-b">
                           <td className="p-2">
                             <input
+                              ref={(el) => { dateInputRefs.current[row.id] = el }}
                               type="date"
                               value={row.date}
                               onChange={(e) => updateExpenseRow(row.id, 'date', e.target.value)}

@@ -128,12 +128,18 @@ export default function EmployeeReportPage() {
     return paymentDate >= startDate && paymentDate <= endDate
   })
 
-  // Calculate totals
+  // Calculate totals for filtered data (by date range)
   const totalWork = filteredWorkRecords.reduce((sum, wr) => 
     sum + (wr.quantity * wr.price), 0
   )
   const totalSalary = filteredSalaryPayments.reduce((sum, sp) => sum + sp.amount, 0)
-  const balance = totalWork - totalSalary
+  
+  // Calculate lifetime balance (all records, not filtered by date)
+  const lifetimeTotalWork = workRecords.reduce((sum, wr) => 
+    sum + (wr.quantity * wr.price), 0
+  )
+  const lifetimeTotalSalary = salaryPayments.reduce((sum, sp) => sum + sp.amount, 0)
+  const balance = lifetimeTotalWork - lifetimeTotalSalary
 
   function addWorkRow() {
     setWorkForm({

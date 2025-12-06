@@ -5,6 +5,7 @@ import DashboardLayout from '@/components/layout/dashboard-layout'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { formatCurrency, formatNumber } from '@/lib/utils'
 import { getPayments, getExpenses } from '@/lib/api'
+import { getAllSalaryPayments } from '@/lib/api/employees'
 
 export default function Dashboard() {
   const [stats, setStats] = useState({
@@ -22,10 +23,11 @@ export default function Dashboard() {
   async function loadDashboardStats() {
     try {
       setLoading(true)
-      // Fetch all payments and expenses
-      const [payments, expenses] = await Promise.all([
+      // Fetch all payments, expenses, and salary payments
+      const [payments, expenses, salaryPayments] = await Promise.all([
         getPayments(),
-        getExpenses()
+        getExpenses(),
+        getAllSalaryPayments()
       ])
       
       // Calculate PayIn (credit) and PayOut (debit)
@@ -37,8 +39,10 @@ export default function Dashboard() {
         .filter(p => p.type === 'debit')
         .reduce((sum, p) => sum + p.amount, 0)
       
-      // Calculate total expenses
-      const totalExpenses = expenses.reduce((sum, e) => sum + e.amount, 0)
+      // Calculate total expenses (includes both expenses and salary payments)
+      const expensesSum = expenses.reduce((sum, e) => sum + e.amount, 0)
+      const salariesSum = salaryPayments.reduce((sum, sp) => sum + sp.amount, 0)
+      const totalExpenses = expensesSum + salariesSum
       
       // Balance = PayIn - PayOut - Expenses
       const balance = totalPayin - totalPayout - totalExpenses
@@ -163,7 +167,7 @@ export default function Dashboard() {
                 <div className="text-xl sm:text-2xl font-bold">{formatCurrency(stats.totalExpenses)}</div>
               )}
               <p className="text-xs text-muted-foreground">
-                All submitted expenses
+                Expenses + Paid Salaries
               </p>
             </CardContent>
           </Card>

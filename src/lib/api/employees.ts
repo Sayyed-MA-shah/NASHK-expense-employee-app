@@ -149,6 +149,16 @@ export async function getSalaryPaymentsByEmployee(employeeId: string) {
   return data as SalaryPaymentRow[]
 }
 
+export async function getAllSalaryPayments() {
+  const { data, error } = await supabase
+    .from('salary_payments')
+    .select('*')
+    .order('payment_date', { ascending: false })
+  
+  if (error) throw error
+  return data as SalaryPaymentRow[]
+}
+
 export async function createSalaryPayment(payment: SalaryPaymentInsert) {
   const { data, error } = await supabase
     .from('salary_payments')

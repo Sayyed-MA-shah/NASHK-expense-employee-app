@@ -376,7 +376,7 @@ export default function PaymentsPage() {
         </div>
 
         {/* KPI Cards */}
-        <div className="grid gap-4 md:grid-cols-3">
+        <div className="grid gap-4 md:grid-cols-2">
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">Total Payin</CardTitle>
@@ -399,21 +399,6 @@ export default function PaymentsPage() {
               <div className="text-2xl font-bold text-red-600">{formatCurrency(totalPayout)}</div>
               <p className="text-xs text-muted-foreground">
                 Money sent
-              </p>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Balance</CardTitle>
-              <Wallet className="h-4 w-4 text-blue-600" />
-            </CardHeader>
-            <CardContent>
-              <div className={`text-2xl font-bold ${balance >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                {formatCurrency(Math.abs(balance))}
-              </div>
-              <p className="text-xs text-muted-foreground">
-                {balance >= 0 ? 'Positive balance' : 'Negative balance'}
               </p>
             </CardContent>
           </Card>

@@ -140,6 +140,9 @@ export default function EmployeeReportPage() {
   )
   const totalSalary = filteredSalaryPayments.reduce((sum, sp) => sum + sp.amount, 0)
   
+  // Calculate filtered balance (for display in KPI cards - based on date range)
+  const filteredBalance = totalWork - totalSalary
+  
   // Calculate lifetime balance (all records, not filtered by date)
   const lifetimeTotalWork = workRecords.reduce((sum, wr) => 
     sum + (wr.quantity * wr.price), 0
@@ -808,10 +811,10 @@ export default function EmployeeReportPage() {
             </div>
             <div className="border border-gray-200 rounded-lg p-4">
               <div className="text-xs text-gray-500 uppercase mb-2">Balance</div>
-              <div className={`text-2xl font-bold ${balance < 0 ? 'text-red-600' : 'text-green-600'}`}>
-                {formatCurrency(balance)}
+              <div className={`text-2xl font-bold ${filteredBalance < 0 ? 'text-red-600' : 'text-green-600'}`}>
+                {formatCurrency(filteredBalance)}
               </div>
-              <div className="text-xs text-gray-500 mt-1">{balance < 0 ? 'Overpaid' : 'Outstanding'}</div>
+              <div className="text-xs text-gray-500 mt-1">{filteredBalance < 0 ? 'Overpaid' : 'Outstanding'}</div>
             </div>
           </div>
         </div>
@@ -883,7 +886,7 @@ export default function EmployeeReportPage() {
         </Card>
 
         {/* Summary Cards - Screen Only */}
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3 sm:gap-4 no-print">
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4 sm:gap-4 no-print">
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-xs sm:text-sm font-medium">Total Earned</CardTitle>
@@ -908,17 +911,30 @@ export default function EmployeeReportPage() {
 
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-xs sm:text-sm font-medium">Balance</CardTitle>
-              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className={`h-4 w-4 ${balance < 0 ? 'text-red-600' : 'text-green-600'}`}>
+              <CardTitle className="text-xs sm:text-sm font-medium">Period Balance</CardTitle>
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className={`h-4 w-4 ${filteredBalance < 0 ? 'text-red-600' : 'text-green-600'}`}>
                 <path d="M3 3v18h18" />
                 <path d="m19 9-5 5-4-4-3 3" />
               </svg>
             </CardHeader>
             <CardContent>
+              <div className={`text-2xl font-bold ${filteredBalance < 0 ? 'text-red-600' : 'text-green-600'}`}>
+                {formatCurrency(filteredBalance)}
+              </div>
+              <p className="text-xs text-muted-foreground">For selected dates</p>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-xs sm:text-sm font-medium">Lifetime Balance</CardTitle>
+              <Wallet className="h-4 w-4 text-purple-600" />
+            </CardHeader>
+            <CardContent>
               <div className={`text-2xl font-bold ${balance < 0 ? 'text-red-600' : 'text-green-600'}`}>
                 {formatCurrency(balance)}
               </div>
-              <p className="text-xs text-muted-foreground">Outstanding balance</p>
+              <p className="text-xs text-muted-foreground">{balance < 0 ? 'Overpaid' : 'Outstanding'}</p>
             </CardContent>
           </Card>
         </div>

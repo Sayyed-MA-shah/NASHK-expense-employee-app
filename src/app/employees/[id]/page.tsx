@@ -886,57 +886,91 @@ export default function EmployeeReportPage() {
         </Card>
 
         {/* Summary Cards - Screen Only */}
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4 sm:gap-4 no-print">
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-xs sm:text-sm font-medium">Total Earned</CardTitle>
-              <TrendingUp className="h-4 w-4 text-green-600" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-green-600">{formatCurrency(totalWork)}</div>
-              <p className="text-xs text-muted-foreground">{filteredWorkRecords.length} work records</p>
-            </CardContent>
-          </Card>
+        <div className="space-y-3 no-print">
+          {/* Period Summary */}
+          <div>
+            <h3 className="text-sm font-medium text-muted-foreground mb-2">📊 Period Summary ({formatDate(startDate)} to {formatDate(endDate)})</h3>
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-3 sm:gap-4">
+              <Card>
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-xs sm:text-sm font-medium">Earned</CardTitle>
+                  <TrendingUp className="h-4 w-4 text-green-600" />
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold text-green-600">{formatCurrency(totalWork)}</div>
+                  <p className="text-xs text-muted-foreground">{filteredWorkRecords.length} work records</p>
+                </CardContent>
+              </Card>
 
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-xs sm:text-sm font-medium">Salary Paid</CardTitle>
-              <DollarSign className="h-4 w-4 text-blue-600" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-blue-600">{formatCurrency(totalSalary)}</div>
-              <p className="text-xs text-muted-foreground">{filteredSalaryPayments.length} payments</p>
-            </CardContent>
-          </Card>
+              <Card>
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-xs sm:text-sm font-medium">Paid</CardTitle>
+                  <DollarSign className="h-4 w-4 text-blue-600" />
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold text-blue-600">{formatCurrency(totalSalary)}</div>
+                  <p className="text-xs text-muted-foreground">{filteredSalaryPayments.length} payments</p>
+                </CardContent>
+              </Card>
 
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-xs sm:text-sm font-medium">Period Balance</CardTitle>
-              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className={`h-4 w-4 ${filteredBalance < 0 ? 'text-red-600' : 'text-green-600'}`}>
-                <path d="M3 3v18h18" />
-                <path d="m19 9-5 5-4-4-3 3" />
-              </svg>
-            </CardHeader>
-            <CardContent>
-              <div className={`text-2xl font-bold ${filteredBalance < 0 ? 'text-red-600' : 'text-green-600'}`}>
-                {formatCurrency(filteredBalance)}
-              </div>
-              <p className="text-xs text-muted-foreground">For selected dates</p>
-            </CardContent>
-          </Card>
+              <Card>
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-xs sm:text-sm font-medium">Balance</CardTitle>
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className={`h-4 w-4 ${filteredBalance < 0 ? 'text-red-600' : 'text-green-600'}`}>
+                    <path d="M3 3v18h18" />
+                    <path d="m19 9-5 5-4-4-3 3" />
+                  </svg>
+                </CardHeader>
+                <CardContent>
+                  <div className={`text-2xl font-bold ${filteredBalance < 0 ? 'text-red-600' : 'text-green-600'}`}>
+                    {formatCurrency(filteredBalance)}
+                  </div>
+                  <p className="text-xs text-muted-foreground">{filteredBalance < 0 ? 'Overpaid' : 'Outstanding'}</p>
+                </CardContent>
+              </Card>
+            </div>
+          </div>
 
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-xs sm:text-sm font-medium">Lifetime Balance</CardTitle>
-              <Wallet className="h-4 w-4 text-purple-600" />
-            </CardHeader>
-            <CardContent>
-              <div className={`text-2xl font-bold ${balance < 0 ? 'text-red-600' : 'text-green-600'}`}>
-                {formatCurrency(balance)}
-              </div>
-              <p className="text-xs text-muted-foreground">{balance < 0 ? 'Overpaid' : 'Outstanding'}</p>
-            </CardContent>
-          </Card>
+          {/* Lifetime Summary */}
+          <div>
+            <h3 className="text-sm font-medium text-muted-foreground mb-2">💼 Lifetime Summary (All Time)</h3>
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-3 sm:gap-4">
+              <Card className="bg-green-50">
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-xs sm:text-sm font-medium">Total Earned</CardTitle>
+                  <TrendingUp className="h-4 w-4 text-green-600" />
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold text-green-600">{formatCurrency(lifetimeTotalWork)}</div>
+                  <p className="text-xs text-muted-foreground">{workRecords.length} total records</p>
+                </CardContent>
+              </Card>
+
+              <Card className="bg-blue-50">
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-xs sm:text-sm font-medium">Total Paid</CardTitle>
+                  <DollarSign className="h-4 w-4 text-blue-600" />
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold text-blue-600">{formatCurrency(lifetimeTotalSalary)}</div>
+                  <p className="text-xs text-muted-foreground">{salaryPayments.length} total payments</p>
+                </CardContent>
+              </Card>
+
+              <Card className={balance < 0 ? 'bg-red-50' : 'bg-purple-50'}>
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-xs sm:text-sm font-medium">Outstanding</CardTitle>
+                  <Wallet className="h-4 w-4 text-purple-600" />
+                </CardHeader>
+                <CardContent>
+                  <div className={`text-2xl font-bold ${balance < 0 ? 'text-red-600' : 'text-green-600'}`}>
+                    {formatCurrency(balance)}
+                  </div>
+                  <p className="text-xs text-muted-foreground">{balance < 0 ? 'Overpaid' : 'To be paid'}</p>
+                </CardContent>
+              </Card>
+            </div>
+          </div>
         </div>
 
         {/* Work Records Table */}
